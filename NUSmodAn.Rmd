@@ -106,7 +106,7 @@ for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level"))
 }
 # create new column Bids Per Quota (BpQ)
 mydata$BpQ <- with(mydata, Bidders/Quota)
-# datatable
+# datatable *htmlwidget
 # datatable(mydata, filter = "top", width = 600)
 # summary
 summary(mydata)
@@ -118,7 +118,10 @@ summary(mydata)
 
 ## Univariate Histograms
 
-```{r explore1, warning = FALSE, , fig.width = 3, fig.height = 3}
+<details>
+  <summary>View Histograms</summary>
+
+```{r explore1, warning = FALSE, eval = TRUE}
 # plot the categorical variables
 # note: I did not include ModuleCode in this exploratory graph because it has too many levels (83)
 for(r in c("AcadYear", "Semester", "Round", "Level"))
@@ -137,7 +140,7 @@ for(r in c("AcadYear", "Semester", "Round", "Level"))
 }
 ```
 
-```{r explore2, , fig.width = 3, fig.height = 3}
+```{r explore2, warning = FALSE, eval = TRUE}
 # plot the continuous variables
 for(r in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid", "BpQ"))
 {
@@ -155,11 +158,16 @@ for(r in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid",
 }
 ```
 
-## Bivariate Plots {.tabset}
+</details>
+
+## Bivariate Plots
+
+<details>
+  <summary>View Categorical-Categorical Bivariate Plots</summary>
 
 ### Categorical-Categorical
 
-```{r explorecatcat, warning = FALSE, , fig.width = 3, fig.height = 3}
+```{r explorecatcat, warning = FALSE, eval = FALSE}
 # create vector to loop across
 looper <- c("AcadYear", "Semester", "Round", "Level")
 for(r in 1:length(looper))
@@ -192,9 +200,14 @@ for(r in 1:length(looper))
 }
 ```
 
+</details>
+
+<details>
+  <summary>View Continuous-Continuous Bivariate Plots</summary>
+
 ### Continuous-Continuous
 
-```{r exploreconcon, warning = FALSE, , fig.width = 3, fig.height = 3}
+```{r exploreconcon, warning = FALSE, eval = FALSE}
 # create vector to loop across
 looper <- c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid", "BpQ")
 for(r in 1:length(looper))
@@ -234,9 +247,14 @@ for(r in 1:length(looper))
 
 ```
 
+</details>
+
+<details>
+  <summary>View Continuous-Categorical Bivariate Plots</summary>
+
 ### Continuous-Categorical
 
-```{r exploreconcat, warning = FALSE, fig.width = 3, fig.height = 3}
+```{r exploreconcat, warning = FALSE, eval = FALSE}
 for(r in c("AcadYear", "Semester", "Round", "Level"))
 {
   for(i in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid", "BpQ"))
@@ -254,9 +272,14 @@ for(r in c("AcadYear", "Semester", "Round", "Level"))
 }
 ```
 
+</details>
+
+<details>
+  <summary>View Continuous-Module Bivariate Plots</summary>
+
 ### By Module
 
-```{r exploremodule, fig.height = 12, warning = FALSE}
+```{r exploremodule, fig.height = 12, warning = FALSE, eval = FALSE}
 for(i in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid", "BpQ"))
 {
   cat(paste0("ModuleCode"," ~ ",i))
@@ -271,6 +294,8 @@ for(i in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid",
   )
 }
 ```
+
+</details>
 
 # Is It Easier To Bid For Modules With Extremely Early/Late Lectures?
 
