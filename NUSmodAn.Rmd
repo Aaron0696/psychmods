@@ -5,6 +5,8 @@ output:
   github_document:
     toc: true
     toc_depth: 2
+    fig_width: 5
+    fig_height: 5
   html_document:
     fig_align: center
     code_folding: show
@@ -25,6 +27,9 @@ library(rjson)
 library(stringr)
 library(DT)
 library(psych)
+library(corrplot)
+library(dplyr)
+options(width = 999)
 ```
 
 # Extract Data
@@ -62,17 +67,59 @@ str(mydata)
 saveRDS(mydata, file = "mydata.RDS")
 ```
 
-## Load RDS
+## Load `mydata.RDS`
 
 ```{r loadrds}
 mydata <- readRDS("mydata.RDS")
 ```
 
+## Module Information
+
+```{r extract2, eval = FALSE}
+myjson <- fromJSON(file = url("https://nusmods.com/api/moduleTimetableDeltaRaw.json"))
+# create empty dataframe which will act as a container to be populated with data
+myModInfo <- data.frame()
+# for each element in the myjson list, append it to mydata
+for(r in 1:length(myjson))
+{
+  if(myjson[[r]]$Semester == 1 | myjson[[r]]$Semester == 2)
+  {
+    myModInfo <- rbind(myModInfo, myjson[[r]])
+  }
+  myjson[[r]] <- NA
+}
+
+# save
+saveRDS(myModInfo, file = "myModInfo.RDS")
+```
+
+## Load `myModInfo.RDS`
+
+```{r loadrds2}
+myModInfo <- readRDS("myModInfo.RDS")
+```
+
 # Transform Data
 
-```{r transform1, fig.align = 'left'}
-# remove unneeded columns
-mydata <- mydata[, -grep("Group|StudentAcctType|Faculty", names(mydata))]
+## `myModInfo`
+
+```{r transform2}
+# only keep the Psychology modules information
+myModInfo <- subset(myModInfo,
+                     str_detect(myModInfo$ModuleCode, "^PL"))
+# remove information about tutorials
+myModInfo <- subset(myModInfo,
+                    myModInfo$LessonType != "TUTORIAL")
+# only keep these columns
+myModInfo <- myModInfo[,grep("ModuleCode|DayText|StartTime|Semester|AcadYear", names(myModInfo))]
+# remove duplicated rows based on columns of ModuleCode, Acadyear and Semester
+myModInfo <- distinct(myModInfo, 
+                      ModuleCode, AcadYear, Semester, StartTime, DayText)
+```
+
+## `mydata`
+
+```{r transform1}
 # remove non-psychology modules
 mydata <- subset(mydata,
                  # only keep rows where module code begins with PL
@@ -80,7 +127,14 @@ mydata <- subset(mydata,
 # remove core psychology modules, they are PL323[2 to 6], PL1101E, PL2131, PL2132.
 # also remove Roots and Wings (PLS8001) and psychology for non-psych students (PLB1201)
 mydata <- subset(mydata,
-                 !str_detect(mydata$ModuleCode, "PL323[2-6]|PL1101|PL2131|PL2132|PLS|PLB"))
+                 !str_detect(mydata$ModuleCode, "PLS|PLB"))
+
+# remove the rounds where it was reserved
+mydata <- subset(mydata,
+                     !str_detect(mydata$StudentAcctType, "Reserved"))
+
+# remove unneeded columns
+mydata <- mydata[, -grep("Group|Faculty", names(mydata))]
 
 # create new column that indicates the level of the module, based on their module code
 # since I removed all the level 1 and level 2 modules in the lines above, technically I dont require the first two
@@ -94,27 +148,47 @@ mydata$Level <- ifelse(str_detect(mydata$ModuleCode, "1[0-9][0-9][0-9]"), "Level
 xtabs( ~ ModuleCode + Level, 
        data = mydata, subset = NULL)
 
+# datatable *htmlwidget
+# datatable(mydata, filter = "top", width = 600)
+
+mydata <- merge(x = mydata, 
+                 # exclude the columns of AcadYear and Semester as duplicate column messes up the function
+                 y = myModInfo,
+                 by = c("ModuleCode", "AcadYear", "Semester"),
+                 all.x = TRUE,
+                 all.y = FALSE)
+
 # transform these columns to numeric
-for(r in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid"))
+for(r in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid", "StartTime"))
 {
   mydata[,grep(r, names(mydata))] <- as.numeric(mydata[,grep(r, names(mydata))])
 }
 # transform these columns to factors
-for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level"))
+for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level", "StudentAcctType", "DayText"))
 {
   mydata[,grep(r, names(mydata))] <- factor(mydata[,grep(r, names(mydata))])
 }
+
 # create new column Bids Per Quota (BpQ)
 mydata$BpQ <- with(mydata, Bidders/Quota)
-# datatable *htmlwidget
-# datatable(mydata, filter = "top", width = 600)
-# summary
-summary(mydata)
+# create vector of the column names which are factors
+facnames <- names(select_if(mydata, is.factor))
+facnames.mod <- facnames[-grep("ModuleCode", facnames)]
+# create vector of the column names which are numeric
+numnames <- names(select_if(mydata, is.numeric))
 ```
 
 # Explore Data
 
 ## Univariate Descriptive Statistics
+
+```{r unides}
+describe(mydata)
+```
+
+```{r unisum}
+summary(mydata)
+```
 
 ## Univariate Histograms
 
@@ -124,7 +198,7 @@ summary(mydata)
 ```{r explore1, warning = FALSE, eval = TRUE}
 # plot the categorical variables
 # note: I did not include ModuleCode in this exploratory graph because it has too many levels (83)
-for(r in c("AcadYear", "Semester", "Round", "Level"))
+for(r in facnames.mod)
 {
   cat(paste0("Histogram Of ", r))
   
@@ -142,7 +216,7 @@ for(r in c("AcadYear", "Semester", "Round", "Level"))
 
 ```{r explore2, warning = FALSE, eval = TRUE}
 # plot the continuous variables
-for(r in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid", "BpQ"))
+for(r in numnames)
 {
   cat(paste0("Histogram Of ", r))
   
@@ -167,28 +241,27 @@ for(r in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid",
 
 ### Categorical-Categorical
 
-```{r explorecatcat, warning = FALSE, eval = FALSE}
+```{r explorecatcat, warning = FALSE, eval = TRUE}
 # create vector to loop across
-looper <- c("AcadYear", "Semester", "Round", "Level")
-for(r in 1:length(looper))
+for(r in 1:length(facnames.mod))
 {
-  for(i in 1:length(looper))
+  for(i in 1:length(facnames.mod))
   {
    # dont do anything if they are the same or the graph has been made before
    if(i == r | i < r)
    {
    } else {
-     cat(paste0(looper[r]," ~ ",looper[i]))
+     cat(paste0(facnames.mod[r]," ~ ",facnames.mod[i]))
      
      # create formula for xtabs
-     tempform <- paste0("~ ", looper[r], " + ", looper[i])
+     tempform <- paste0("~ ", facnames.mod[r], " + ", facnames.mod[i])
      # temp is a dataframe that is only going to exist in this section
      # and overwritten with each loop
      temp <- as.data.frame(xtabs(eval(parse(text = tempform)),
                             data = mydata,
                             subset = NULL))
      plot(
-       ggplot(data = temp, aes_string(x = looper[r], y = looper[i], fill = "Freq", label = "Freq")) +
+       ggplot(data = temp, aes_string(x = facnames.mod[r], y = facnames.mod[i], fill = "Freq", label = "Freq")) +
          geom_tile() + 
          geom_text() + 
          scale_fill_gradient(low = "white", high = "violetred") + 
@@ -207,21 +280,19 @@ for(r in 1:length(looper))
 
 ### Continuous-Continuous
 
-```{r exploreconcon, warning = FALSE, eval = FALSE}
-# create vector to loop across
-looper <- c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid", "BpQ")
-for(r in 1:length(looper))
+```{r exploreconcon, warning = FALSE, eval = TRUE}
+for(r in 1:length(numnames))
 {
-  for(i in 1:length(looper))
+  for(i in 1:length(numnames))
   {
    # dont do anything if they are the same or the graph has been made before
    if(i == r | i < r)
    {
    } else {
-     cat(paste0(looper[r]," ~ ",looper[i]))
+     cat(paste0(numnames[r]," ~ ",numnames[i]))
      # create formula for lm()
-     tempform.std <- paste0("scale(", looper[i],")", " ~ ", "scale(", looper[r], ")")
-     tempform <- paste0(looper[i], " ~ ", looper[r])
+     tempform.std <- paste0("scale(", numnames[i],")", " ~ ", "scale(", numnames[r], ")")
+     tempform <- paste0(numnames[i], " ~ ", numnames[r])
      # regress to get best fit line
      # standardized
      stdreg <- lm(eval(parse(text = tempform.std)),
@@ -231,7 +302,7 @@ for(r in 1:length(looper))
                data = mydata)
      
      plot(
-       ggplot(data = mydata, aes_string(x = looper[r], y = looper[i])) +
+       ggplot(data = mydata, aes_string(x = numnames[r], y = numnames[i])) +
          geom_point(color = "violetred", size = 2, alpha = 0.5) +
          theme_classic() + 
          geom_abline(slope = reg$coefficients[2], intercept = reg$coefficients[1], lty = "dashed") + 
@@ -250,14 +321,27 @@ for(r in 1:length(looper))
 </details>
 
 <details>
+  <summary>View Correlation Matrix</summary>
+
+
+### Correlation Matrix
+
+```{r, fig.width = 7, fig.height = 7}
+corrplot.mixed(cor(select_if(mydata, is.numeric)),
+               upper = "color",
+               tl.pos = "lt")
+```
+
+
+<details>
   <summary>View Continuous-Categorical Bivariate Plots</summary>
 
 ### Continuous-Categorical
 
-```{r exploreconcat, warning = FALSE, eval = FALSE}
-for(r in c("AcadYear", "Semester", "Round", "Level"))
+```{r exploreconcat, warning = FALSE, eval = TRUE}
+for(r in facnames.mod)
 {
-  for(i in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid", "BpQ"))
+  for(i in numnames)
   {
     cat(paste0(r," ~ ",i))
     # graph
@@ -279,8 +363,8 @@ for(r in c("AcadYear", "Semester", "Round", "Level"))
 
 ### By Module
 
-```{r exploremodule, fig.height = 12, warning = FALSE, eval = FALSE}
-for(i in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid", "BpQ"))
+```{r exploremodule, fig.height = 12, warning = FALSE, eval = TRUE}
+for(i in numnames)
 {
   cat(paste0("ModuleCode"," ~ ",i))
   # graph

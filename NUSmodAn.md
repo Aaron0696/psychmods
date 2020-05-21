@@ -5,7 +5,9 @@ Aaron0696
   - [Set Up](#set-up)
   - [Extract Data](#extract-data)
       - [Bidding Data From `nusmods`](#bidding-data-from-nusmods)
-      - [Load RDS](#load-rds)
+      - [Load `mydata.RDS`](#load-mydata.rds)
+      - [Module Information](#module-information)
+      - [Load `myModInfo.RDS`](#load-mymodinfo.rds)
   - [Transform Data](#transform-data)
   - [Explore Data](#explore-data)
       - [Univariate Descriptive
@@ -24,6 +26,9 @@ library(rjson)
 library(stringr)
 library(DT)
 library(psych)
+library(corrplot)
+library(dplyr)
+options(width = 999)
 ```
 
 # Extract Data
@@ -61,7 +66,33 @@ str(mydata)
 saveRDS(mydata, file = "mydata.RDS")
 ```
 
-## Load RDS
+## Load `mydata.RDS`
+
+``` r
+mydata <- readRDS("mydata.RDS")
+```
+
+## Module Information
+
+``` r
+myjson <- fromJSON(file = url("https://nusmods.com/api/moduleTimetableDeltaRaw.json"))
+# create empty dataframe which will act as a container to be populated with data
+myModInfo <- data.frame()
+# for each element in the myjson list, append it to mydata
+for(r in 1:length(myjson))
+{
+  if(myjson[[r]]$Semester == 1 | myjson[[r]]$Semester == 2)
+  {
+    myModInfo <- rbind(myModInfo, myjson[[r]])
+  }
+  myjson[[r]] <- NA
+}
+
+# save
+saveRDS(myModInfo, file = "myModInfo.RDS")
+```
+
+## Load `myModInfo.RDS`
 
 ``` r
 mydata <- readRDS("mydata.RDS")
@@ -195,38 +226,41 @@ for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level"))
 mydata$BpQ <- with(mydata, Bidders/Quota)
 # datatable *htmlwidget
 # datatable(mydata, filter = "top", width = 600)
-# summary
-summary(mydata)
 ```
-
-    ##       AcadYear   Semester Round      ModuleCode       Quota       
-    ##  2011/2012:340   1:975    1A:433   PL3241 :  64   Min.   :  1.00  
-    ##  2013/2014:313   2:874    1B:222   PL3242 :  59   1st Qu.:  3.00  
-    ##  2015/2016:296            1C:154   PL3237 :  55   Median : 12.00  
-    ##  2014/2015:251            2A:282   PL3281A:  51   Mean   : 18.25  
-    ##  2012/2013:233            2B:283   PL3239 :  48   3rd Qu.: 27.00  
-    ##  2016/2017:195            3A:255   PL3240 :  45   Max.   :136.00  
-    ##  (Other)  :221            3B:220   (Other):1527                   
-    ##     Bidders          LowestBid       LowestSuccessfulBid   HighestBid    
-    ##  Min.   :  0.000   Min.   :   0.00   Min.   :   0        Min.   :   0.0  
-    ##  1st Qu.:  0.000   1st Qu.:   0.00   1st Qu.:   0        1st Qu.:   0.0  
-    ##  Median :  3.000   Median :   1.00   Median :   1        Median : 219.0  
-    ##  Mean   :  8.872   Mean   :  79.48   Mean   : 264        Mean   : 713.3  
-    ##  3rd Qu.:  8.000   3rd Qu.:   7.00   3rd Qu.: 153        3rd Qu.:1234.0  
-    ##  Max.   :175.000   Max.   :2430.00   Max.   :3459        Max.   :4801.0  
-    ##                                                                          
-    ##      Level           BpQ         
-    ##  Level 3:1074   Min.   : 0.0000  
-    ##  Level 4: 775   1st Qu.: 0.0000  
-    ##                 Median : 0.2857  
-    ##                 Mean   : 1.0066  
-    ##                 3rd Qu.: 1.2250  
-    ##                 Max.   :15.0000  
-    ## 
 
 # Explore Data
 
 ## Univariate Descriptive Statistics
+
+``` r
+describe(mydata)
+```
+
+    ##                     vars    n   mean     sd median trimmed    mad min  max range skew kurtosis    se
+    ## AcadYear*              1 1849   3.82   2.10   4.00    3.70   2.97   1    8     7 0.30    -0.89  0.05
+    ## Semester*              2 1849   1.47   0.50   1.00    1.47   0.00   1    2     1 0.11    -1.99  0.01
+    ## Round*                 3 1849   3.76   2.10   4.00    3.70   2.97   1    7     6 0.03    -1.36  0.05
+    ## ModuleCode*            4 1849  33.29  23.09  33.00   32.00  29.65   1   83    82 0.32    -1.03  0.54
+    ## Quota                  5 1849  18.25  20.23  12.00   14.90  14.83   1  136   135 2.10     6.66  0.47
+    ## Bidders                6 1849   8.87  18.54   3.00    4.29   4.45   0  175   175 4.46    26.26  0.43
+    ## LowestBid              7 1849  79.48 237.76   1.00   16.94   1.48   0 2430  2430 4.76    28.77  5.53
+    ## LowestSuccessfulBid    8 1849 263.96 549.67   1.00  122.91   1.48   0 3459  3459 2.42     5.91 12.78
+    ## HighestBid             9 1849 713.25 901.23 219.00  559.86 324.69   0 4801  4801 1.23     0.78 20.96
+    ## Level*                10 1849   1.42   0.49   1.00    1.40   0.00   1    2     1 0.33    -1.89  0.01
+    ## BpQ                   11 1849   1.01   1.74   0.29    0.60   0.42   0   15    15 3.27    13.70  0.04
+
+``` r
+summary(mydata)
+```
+
+    ##       AcadYear   Semester Round      ModuleCode       Quota           Bidders          LowestBid       LowestSuccessfulBid   HighestBid         Level           BpQ         
+    ##  2011/2012:340   1:975    1A:433   PL3241 :  64   Min.   :  1.00   Min.   :  0.000   Min.   :   0.00   Min.   :   0        Min.   :   0.0   Level 3:1074   Min.   : 0.0000  
+    ##  2013/2014:313   2:874    1B:222   PL3242 :  59   1st Qu.:  3.00   1st Qu.:  0.000   1st Qu.:   0.00   1st Qu.:   0        1st Qu.:   0.0   Level 4: 775   1st Qu.: 0.0000  
+    ##  2015/2016:296            1C:154   PL3237 :  55   Median : 12.00   Median :  3.000   Median :   1.00   Median :   1        Median : 219.0                  Median : 0.2857  
+    ##  2014/2015:251            2A:282   PL3281A:  51   Mean   : 18.25   Mean   :  8.872   Mean   :  79.48   Mean   : 264        Mean   : 713.3                  Mean   : 1.0066  
+    ##  2012/2013:233            2B:283   PL3239 :  48   3rd Qu.: 27.00   3rd Qu.:  8.000   3rd Qu.:   7.00   3rd Qu.: 153        3rd Qu.:1234.0                  3rd Qu.: 1.2250  
+    ##  2016/2017:195            3A:255   PL3240 :  45   Max.   :136.00   Max.   :175.000   Max.   :2430.00   Max.   :3459        Max.   :4801.0                  Max.   :15.0000  
+    ##  (Other)  :221            3B:220   (Other):1527
 
 ## Univariate Histograms
 
@@ -404,6 +438,20 @@ for(r in 1:length(looper))
 
 <details>
 
+<summary>View Correlation Matrix</summary>
+
+### Correlation Matrix
+
+``` r
+corrplot.mixed(cor(select_if(mydata, is.numeric)),
+               upper = "color",
+               tl.pos = "lt")
+```
+
+![](NUSmodAn_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+
+<details>
+
 <summary>View Continuous-Categorical Bivariate Plots</summary>
 
 ### Continuous-Categorical
@@ -453,3 +501,17 @@ for(i in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid",
 </details>
 
 # Is It Easier To Bid For Modules With Extremely Early/Late Lectures?
+
+``` r
+# testing
+lm(BpQ ~ Level,
+   data = mydata)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = BpQ ~ Level, data = mydata)
+    ## 
+    ## Coefficients:
+    ##  (Intercept)  LevelLevel 4  
+    ##       0.6064        0.9546
