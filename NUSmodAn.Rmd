@@ -18,7 +18,17 @@ output:
     df_print: paged
 ---
 
-# Set Up
+# Phase 1: Setting Up Environment, Packages And Loading Data.
+
+* Load packages
+* Extract data from `nusmods` API at https://nusmods.com/api/.
+    * CORS bidding data.
+    * Module information.
+
+<details>
+  <summary>Expand Codes/Workflow</summary>
+
+## >Packages And Options
 
 ```{r setup, warning = FALSE, message = FALSE}
 # rmarkdown::render(input = "NUSmodAn.Rmd",
@@ -35,11 +45,11 @@ library(dplyr)
 options(width = 999)
 ```
 
-# Extract Data
+## >Extract Data
 
-## Bidding Data From `nusmods`
+### >>Bidding Data From `nusmods`
 
-```{r extract, eval = FALSE}
+```{r extract, eval=FALSE}
 # load bidding data
 # calculate loading times
 before <- Sys.time()
@@ -70,15 +80,15 @@ str(mydata)
 saveRDS(mydata, file = "mydata.RDS")
 ```
 
-## Load `mydata.RDS`
+### >>Load `mydata.RDS`
 
 ```{r loadrds}
 mydata <- readRDS("mydata.RDS")
 ```
 
-## Module Information
+## >Module Information
 
-```{r extract2, eval = FALSE}
+```{r extract2, eval=FALSE}
 myjson <- fromJSON(file = url("https://nusmods.com/api/moduleTimetableDeltaRaw.json"))
 # create empty dataframe which will act as a container to be populated with data
 myModInfo <- data.frame()
@@ -96,17 +106,37 @@ for(r in 1:length(myjson))
 saveRDS(myModInfo, file = "myModInfo.RDS")
 ```
 
-## Load `myModInfo.RDS`
+### >>Load `myModInfo.RDS`
 
 ```{r loadrds2}
 myModInfo <- readRDS("myModInfo.RDS")
 ```
 
-# Transform Data
+</details>
 
-## `myModInfo`
+# Phase 2: Filter, Transform And Merge Data
 
-```{r transform2}
+* Filter Module Information, `myModInfo`.
+    * Removing non-Psychology modules.
+    * Removing tutorial information.
+    * Removing duplicated rows.
+* Filter CORS Bidding Information, `mydata`.
+    * Removing non-Psychology modules, including Roots and Wings (PLS) and Psychology for non-Psychology students (PLB).
+    * Removing information from reserved modules.
+* Transform
+    * Created a new variable `Level` that denotes whether the module is Level 1, 2, 3 or 4.
+    * Created a new variable `BpQ` that represents Bids per Quota, which is the number of bidders for each available quota of the module. Used as a measure of the popularity of a module, Higher `BpQ` signifies greater popularity.
+* Merge
+    * Add the information from `myModInfo` to `mydata`.
+
+<details>
+  <summary>Expand Codes/Workflow</summary>
+
+## >`myModInfo`
+
+### >>Filter
+
+```{r filter1}
 # only keep the Psychology modules information
 myModInfo <- subset(myModInfo,
                      str_detect(myModInfo$ModuleCode, "^PL"))
@@ -120,9 +150,11 @@ myModInfo <- distinct(myModInfo,
                       ModuleCode, AcadYear, Semester, StartTime, DayText)
 ```
 
-## `mydata`
+## >`mydata`
 
-```{r transform1}
+### >>Filter
+
+```{r filter2}
 # remove non-psychology modules
 mydata <- subset(mydata,
                  # only keep rows where module code begins with PL
@@ -138,29 +170,35 @@ mydata <- subset(mydata,
 
 # remove unneeded columns
 mydata <- mydata[, -grep("Group|Faculty", names(mydata))]
+```
 
+### >>Transform And Merge
+
+```{r transform1}
 # create new column that indicates the level of the module, based on their module code
-# since I removed all the level 1 and level 2 modules in the lines above, technically I dont require the first two
-# ifelse conditions, but I'll leave it here as a demonstration.
 mydata$Level <- ifelse(str_detect(mydata$ModuleCode, "1[0-9][0-9][0-9]"), "Level 1",
                        ifelse(str_detect(mydata$ModuleCode, "2[0-9][0-9][0-9]"), "Level 2",
                               ifelse(str_detect(mydata$ModuleCode, "3[0-9][0-9][0-9]"), "Level 3",
                                      ifelse(str_detect(mydata$ModuleCode, "4[0-9][0-9][0-9]"), "Level 4", 
                                             "Graduate Module"))))
 # crosstabs to doublecheck
-xtabs( ~ ModuleCode + Level, 
-       data = mydata, subset = NULL)
+# xtabs( ~ ModuleCode + Level, 
+#        data = mydata, subset = NULL)
 
-# datatable *htmlwidget
-# datatable(mydata, filter = "top", width = 600)
+# create new column Bids Per Quota (BpQ)
+mydata$BpQ <- as.numeric(mydata$Bidders)/as.numeric(mydata$Quota)
+```
 
+```{r merge}
 mydata <- merge(x = mydata, 
                  # exclude the columns of AcadYear and Semester as duplicate column messes up the function
                  y = myModInfo,
                  by = c("ModuleCode", "AcadYear", "Semester"),
                  all.x = TRUE,
                  all.y = FALSE)
+```
 
+```{r transform2}
 # transform these columns to numeric
 for(r in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid", "StartTime"))
 {
@@ -171,30 +209,39 @@ for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level", "StudentAcctT
 {
   mydata[,grep(r, names(mydata))] <- factor(mydata[,grep(r, names(mydata))])
 }
+```
 
-# rename levels with long names
+## >Vectors Of Column Names
 
-# create new column Bids Per Quota (BpQ)
-mydata$BpQ <- with(mydata, Bidders/Quota)
+```{r}
 # create vector of the column names which are factors
 facnames <- names(select_if(mydata, is.factor))
+# factor names without ModuleCode and StudentAcctType
 facnames.mod <- facnames[-grep("ModuleCode|StudentAcctType", facnames)]
 # create vector of the column names which are numeric
 numnames <- names(select_if(mydata, is.numeric))
+# numeric names without StartTime
 numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numnames)]
 ```
 
-# Explore Data
+</details>
+
+# Phase 3: Explore
 
 ## Univariate Descriptive Statistics
 
-```{r unides, dpi = 150}
+<details>
+  <summary>View Descriptive Statistics</summary>
+
+```{r unides}
 describe(mydata)
 ```
 
-```{r unisum, dpi = 150}
+```{r unisum}
 summary(mydata)
 ```
+
+</details>
 
 ## Univariate Histograms
 
@@ -214,7 +261,7 @@ for(r in facnames.mod)
   ylab("Count") +
   ggtitle(paste0("Count of ", r)) +
   theme_classic() + 
-  theme(axis.text.x = element_text(angle = 90, size = 10, vjust = -1),
+  theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3),
         axis.title.x = element_blank())
   )
 }
@@ -232,7 +279,7 @@ for(r in numnames)
   ylab("Histogram") +
   ggtitle(paste0("Frequency of ", r)) +
   theme_classic() + 
-  theme(axis.text.x = element_text(angle = 90, size = 10, vjust = -1),
+  theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3),
         axis.title.x = element_text())
   )
 }
@@ -247,7 +294,7 @@ for(r in numnames)
 
 ### Categorical-Categorical
 
-```{r explorecatcat, warning = FALSE, eval = TRUE, , dpi = 150}
+```{r explorecatcat, warning = FALSE, eval = TRUE, dpi = 150}
 # create vector to loop across
 for(r in 1:length(facnames.mod))
 {
@@ -272,7 +319,7 @@ for(r in 1:length(facnames.mod))
          geom_text() + 
          scale_fill_gradient(low = "white", high = "violetred") + 
          theme_minimal() + 
-         theme(axis.text.x = element_text(angle = 90, size = 10, vjust = -1))
+         theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
      )
    }
   }
@@ -315,7 +362,7 @@ for(r in 1:length(numnames))
          geom_label(aes(x = Inf, y = Inf, label = paste0("Standardized Regression Coefficient = ",
                                                          round(stdreg$coefficients[2],3)),
                         hjust = 1, vjust = 1)) + 
-         theme(axis.text.x = element_text(angle = 90, size = 10, vjust = -1))
+         theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
      )
    }
   }
@@ -332,10 +379,12 @@ for(r in 1:length(numnames))
 
 ### Correlation Matrix
 
-```{r corrmatrix, fig.width = 7, fig.height = 7, dpi = 150}
+```{r corrmatrix, fig.width = 4, fig.height = 4, dpi = 150}
 corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(mydata))]),
                upper = "color",
-               tl.pos = "lt")
+               tl.pos = "lt",
+               tl.cex = 0.5,
+               cl.cex = 0.5)
 ```
 
 
@@ -356,7 +405,7 @@ for(r in facnames.mod)
       geom_bar(stat = "identity") + 
       theme_classic() + 
       theme(legend.position = "none",
-            axis.text.x = element_text(angle = 90, size = 10, vjust = -1))
+            axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
     )
   }
 }

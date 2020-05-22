@@ -2,16 +2,17 @@ NUSmodAn
 ================
 Aaron0696
 
-  - [Set Up](#set-up)
-  - [Extract Data](#extract-data)
-      - [Bidding Data From `nusmods`](#bidding-data-from-nusmods)
-      - [Load `mydata.RDS`](#load-mydata.rds)
-      - [Module Information](#module-information)
-      - [Load `myModInfo.RDS`](#load-mymodinfo.rds)
-  - [Transform Data](#transform-data)
-      - [`myModInfo`](#mymodinfo)
-      - [`mydata`](#mydata)
-  - [Explore Data](#explore-data)
+  - [Phase 1: Setting Up Environment, Packages And Loading
+    Data.](#phase-1-setting-up-environment-packages-and-loading-data.)
+      - [\>Packages And Options](#packages-and-options)
+      - [\>Extract Data](#extract-data)
+      - [\>Module Information](#module-information)
+  - [Phase 2: Filter, Transform And Merge
+    Data](#phase-2-filter-transform-and-merge-data)
+      - [\>`myModInfo`](#mymodinfo)
+      - [\>`mydata`](#mydata)
+      - [\>Vectors Of Column Names](#vectors-of-column-names)
+  - [Phase 3: Explore](#phase-3-explore)
       - [Univariate Descriptive
         Statistics](#univariate-descriptive-statistics)
       - [Univariate Histograms](#univariate-histograms)
@@ -19,7 +20,18 @@ Aaron0696
   - [Is It Easier To Bid For Modules With Extremely Early/Late
     Lectures?](#is-it-easier-to-bid-for-modules-with-extremely-earlylate-lectures)
 
-# Set Up
+# Phase 1: Setting Up Environment, Packages And Loading Data.
+
+  - Load packages
+  - Extract data from `nusmods` API at <https://nusmods.com/api/>.
+      - CORS bidding data.
+      - Module information.
+
+<details>
+
+<summary>Expand Codes/Workflow</summary>
+
+## \>Packages And Options
 
 ``` r
 # rmarkdown::render(input = "NUSmodAn.Rmd",
@@ -36,9 +48,9 @@ library(dplyr)
 options(width = 999)
 ```
 
-# Extract Data
+## \>Extract Data
 
-## Bidding Data From `nusmods`
+### \>\>Bidding Data From `nusmods`
 
 ``` r
 # load bidding data
@@ -71,13 +83,13 @@ str(mydata)
 saveRDS(mydata, file = "mydata.RDS")
 ```
 
-## Load `mydata.RDS`
+### \>\>Load `mydata.RDS`
 
 ``` r
 mydata <- readRDS("mydata.RDS")
 ```
 
-## Module Information
+## \>Module Information
 
 ``` r
 myjson <- fromJSON(file = url("https://nusmods.com/api/moduleTimetableDeltaRaw.json"))
@@ -97,15 +109,41 @@ for(r in 1:length(myjson))
 saveRDS(myModInfo, file = "myModInfo.RDS")
 ```
 
-## Load `myModInfo.RDS`
+### \>\>Load `myModInfo.RDS`
 
 ``` r
 myModInfo <- readRDS("myModInfo.RDS")
 ```
 
-# Transform Data
+</details>
 
-## `myModInfo`
+# Phase 2: Filter, Transform And Merge Data
+
+  - Filter Module Information, `myModInfo`.
+      - Removing non-Psychology modules.
+      - Removing tutorial information.
+      - Removing duplicated rows.
+  - Filter CORS Bidding Information, `mydata`.
+      - Removing non-Psychology modules, including Roots and Wings (PLS)
+        and Psychology for non-Psychology students (PLB).
+      - Removing information from reserved modules.
+  - Transform
+      - Created a new variable `Level` that denotes whether the module
+        is Level 1, 2, 3 or 4.
+      - Created a new variable `BpQ` that represents Bids per Quota,
+        which is the number of bidders for each available quota of the
+        module. Used as a measure of the popularity of a module, Higher
+        `BpQ` signifies greater popularity.
+  - Merge
+      - Add the information from `myModInfo` to `mydata`.
+
+<details>
+
+<summary>Expand Codes/Workflow</summary>
+
+## \>`myModInfo`
+
+### \>\>Filter
 
 ``` r
 # only keep the Psychology modules information
@@ -121,7 +159,9 @@ myModInfo <- distinct(myModInfo,
                       ModuleCode, AcadYear, Semester, StartTime, DayText)
 ```
 
-## `mydata`
+## \>`mydata`
+
+### \>\>Filter
 
 ``` r
 # remove non-psychology modules
@@ -139,125 +179,35 @@ mydata <- subset(mydata,
 
 # remove unneeded columns
 mydata <- mydata[, -grep("Group|Faculty", names(mydata))]
+```
 
+### \>\>Transform And Merge
+
+``` r
 # create new column that indicates the level of the module, based on their module code
-# since I removed all the level 1 and level 2 modules in the lines above, technically I dont require the first two
-# ifelse conditions, but I'll leave it here as a demonstration.
 mydata$Level <- ifelse(str_detect(mydata$ModuleCode, "1[0-9][0-9][0-9]"), "Level 1",
                        ifelse(str_detect(mydata$ModuleCode, "2[0-9][0-9][0-9]"), "Level 2",
                               ifelse(str_detect(mydata$ModuleCode, "3[0-9][0-9][0-9]"), "Level 3",
                                      ifelse(str_detect(mydata$ModuleCode, "4[0-9][0-9][0-9]"), "Level 4", 
                                             "Graduate Module"))))
 # crosstabs to doublecheck
-xtabs( ~ ModuleCode + Level, 
-       data = mydata, subset = NULL)
+# xtabs( ~ ModuleCode + Level, 
+#        data = mydata, subset = NULL)
+
+# create new column Bids Per Quota (BpQ)
+mydata$BpQ <- as.numeric(mydata$Bidders)/as.numeric(mydata$Quota)
 ```
 
-    ##           Level
-    ## ModuleCode Level 1 Level 2 Level 3 Level 4
-    ##    PL1101E     182       0       0       0
-    ##    PL2131        0      90       0       0
-    ##    PL2132        0      92       0       0
-    ##    PL3232        0       0     134       0
-    ##    PL3233        0       0     117       0
-    ##    PL3234        0       0     120       0
-    ##    PL3235        0       0     112       0
-    ##    PL3236        0       0     121       0
-    ##    PL3237        0       0      49       0
-    ##    PL3238        0       0      35       0
-    ##    PL3239        0       0      41       0
-    ##    PL3240        0       0      39       0
-    ##    PL3241        0       0      57       0
-    ##    PL3242        0       0      56       0
-    ##    PL3243        0       0      21       0
-    ##    PL3244        0       0      29       0
-    ##    PL3248        0       0      31       0
-    ##    PL3249        0       0      28       0
-    ##    PL3250        0       0      27       0
-    ##    PL3251        0       0      16       0
-    ##    PL3252        0       0      29       0
-    ##    PL3253        0       0      10       0
-    ##    PL3254        0       0      36       0
-    ##    PL3255        0       0      28       0
-    ##    PL3256        0       0      17       0
-    ##    PL3257        0       0      17       0
-    ##    PL3258        0       0      21       0
-    ##    PL3259        0       0      15       0
-    ##    PL3260        0       0       4       0
-    ##    PL3261        0       0      19       0
-    ##    PL3281        0       0      40       0
-    ##    PL3281A       0       0      51       0
-    ##    PL3281B       0       0      10       0
-    ##    PL3281C       0       0      18       0
-    ##    PL3281D       0       0      40       0
-    ##    PL3282        0       0      27       0
-    ##    PL3282A       0       0      13       0
-    ##    PL3282C       0       0       6       0
-    ##    PL3283        0       0       5       0
-    ##    PL3283A       0       0       6       0
-    ##    PL3283B       0       0      29       0
-    ##    PL3284        0       0      44       0
-    ##    PL3285        0       0       6       0
-    ##    PL3286        0       0      37       0
-    ##    PL3287        0       0      21       0
-    ##    PL3288        0       0      22       0
-    ##    PL3289        0       0       1       0
-    ##    PL4201        0       0       0      28
-    ##    PL4202        0       0       0      32
-    ##    PL4203        0       0       0      45
-    ##    PL4205        0       0       0      30
-    ##    PL4206        0       0       0      43
-    ##    PL4207        0       0       0      20
-    ##    PL4208        0       0       0      13
-    ##    PL4213        0       0       0      22
-    ##    PL4214        0       0       0      21
-    ##    PL4217        0       0       0      13
-    ##    PL4218        0       0       0      23
-    ##    PL4219        0       0       0      25
-    ##    PL4220        0       0       0      12
-    ##    PL4221        0       0       0      44
-    ##    PL4222        0       0       0      37
-    ##    PL4223        0       0       0      14
-    ##    PL4224        0       0       0      17
-    ##    PL4225        0       0       0       4
-    ##    PL4226        0       0       0      18
-    ##    PL4227        0       0       0      24
-    ##    PL4228        0       0       0      17
-    ##    PL4229        0       0       0      20
-    ##    PL4230        0       0       0       7
-    ##    PL4231        0       0       0      17
-    ##    PL4232        0       0       0       5
-    ##    PL4233        0       0       0       3
-    ##    PL4234        0       0       0      22
-    ##    PL4235        0       0       0      26
-    ##    PL4237        0       0       0      29
-    ##    PL4238        0       0       0      11
-    ##    PL4239        0       0       0       2
-    ##    PL4240        0       0       0       4
-    ##    PL4241        0       0       0       5
-    ##    PL4880F       0       0       0      16
-    ##    PL4880G       0       0       0      17
-    ##    PL4880H       0       0       0       8
-    ##    PL4880I       0       0       0       6
-    ##    PL4880J       0       0       0      18
-    ##    PL4880K       0       0       0       8
-    ##    PL4880L       0       0       0      19
-    ##    PL4880N       0       0       0       4
-    ##    PL4880P       0       0       0       7
-    ##    PL4880Q       0       0       0       4
-    ##    PL4880R       0       0       0      15
-
 ``` r
-# datatable *htmlwidget
-# datatable(mydata, filter = "top", width = 600)
-
 mydata <- merge(x = mydata, 
                  # exclude the columns of AcadYear and Semester as duplicate column messes up the function
                  y = myModInfo,
                  by = c("ModuleCode", "AcadYear", "Semester"),
                  all.x = TRUE,
                  all.y = FALSE)
+```
 
+``` r
 # transform these columns to numeric
 for(r in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid", "StartTime"))
 {
@@ -268,22 +218,30 @@ for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level", "StudentAcctT
 {
   mydata[,grep(r, names(mydata))] <- factor(mydata[,grep(r, names(mydata))])
 }
+```
 
-# rename levels with long names
+## \>Vectors Of Column Names
 
-# create new column Bids Per Quota (BpQ)
-mydata$BpQ <- with(mydata, Bidders/Quota)
+``` r
 # create vector of the column names which are factors
 facnames <- names(select_if(mydata, is.factor))
+# factor names without ModuleCode and StudentAcctType
 facnames.mod <- facnames[-grep("ModuleCode|StudentAcctType", facnames)]
 # create vector of the column names which are numeric
 numnames <- names(select_if(mydata, is.numeric))
+# numeric names without StartTime
 numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numnames)]
 ```
 
-# Explore Data
+</details>
+
+# Phase 3: Explore
 
 ## Univariate Descriptive Statistics
+
+<details>
+
+<summary>View Descriptive Statistics</summary>
 
 ``` r
 describe(mydata)
@@ -301,22 +259,24 @@ describe(mydata)
     ## HighestBid             9 2878  718.06 862.57  350.0  578.00 518.91   0 4801  4801  1.18     0.76 16.08
     ## StudentAcctType*      10 2878    4.36   1.71    5.0    4.45   1.48   1    7     6 -0.51    -0.38  0.03
     ## Level*                11 2878    3.07   0.82    3.0    3.19   0.00   1    4     3 -1.00     0.93  0.02
-    ## StartTime             12  654 1336.39 264.01 1400.0 1341.22 296.52 800 1800  1000 -0.19    -0.71 10.32
-    ## DayText*              13  654    3.15   1.36    3.0    3.19   1.48   1    5     4 -0.13    -1.18  0.05
-    ## BpQ                   14 2878    1.02   1.77    0.3    0.61   0.44   0   18    18  3.45    15.81  0.03
+    ## BpQ                   12 2878    1.02   1.77    0.3    0.61   0.44   0   18    18  3.45    15.81  0.03
+    ## StartTime             13  654 1336.39 264.01 1400.0 1341.22 296.52 800 1800  1000 -0.19    -0.71 10.32
+    ## DayText*              14  654    3.15   1.36    3.0    3.19   1.48   1    5     4 -0.13    -1.18  0.05
 
 ``` r
 summary(mydata)
 ```
 
-    ##    ModuleCode        AcadYear   Semester Round        Quota           Bidders         LowestBid       LowestSuccessfulBid   HighestBid                                        StudentAcctType     Level        StartTime         DayText          BpQ          
-    ##  PL1101E: 230   2011/2012:460   1:1587   1A:640   Min.   :  1.00   Min.   :  0.00   Min.   :   0.00   Min.   :   0        Min.   :   0.0   New Students [P]                           : 319   Level 1: 230   Min.   : 800   Friday   : 102   Min.   : 0.00000  
-    ##  PL3232 : 134   2013/2014:449   2:1291   1B:386   1st Qu.:  4.00   1st Qu.:  1.00   1st Qu.:   1.00   1st Qu.:   1        1st Qu.:   1.0   NUS Students [G]                           : 135   Level 2: 182   1st Qu.:1200   Monday   : 116   1st Qu.: 0.02128  
-    ##  PL3236 : 121   2015/2016:423            1C:289   Median : 14.00   Median :  3.00   Median :   1.00   Median :   1        Median : 350.0   NUS Students [P, G]                        : 339   Level 3:1623   Median :1400   Thursday : 159   Median : 0.30000  
-    ##  PL3234 : 120   2014/2015:398            2A:419   Mean   : 25.09   Mean   : 12.38   Mean   :  69.39   Mean   : 251        Mean   : 718.1   NUS Students [P]                           : 336   Level 4: 843   Mean   :1336   Tuesday  : 134   Mean   : 1.01954  
-    ##  PL3235 : 119   2016/2017:349            2B:467   3rd Qu.: 32.00   3rd Qu.:  9.00   3rd Qu.:   8.00   3rd Qu.: 201        3rd Qu.:1232.8   Returning Students [P]                     :1231                  3rd Qu.:1575   Wednesday: 143   3rd Qu.: 1.25000  
-    ##  PL3233 : 117   2012/2013:345            3A:376   Max.   :430.00   Max.   :491.00   Max.   :2430.00   Max.   :3459        Max.   :4801.0   Returning Students [P] and NUS Students [G]: 171                  Max.   :1800   NA's     :2224   Max.   :18.00000  
-    ##  (Other):2037   (Other)  :454            3B:301                                                                                            Returning Students and New Students [P]    : 347                  NA's   :2224
+    ##    ModuleCode        AcadYear   Semester Round        Quota           Bidders         LowestBid       LowestSuccessfulBid   HighestBid                                        StudentAcctType     Level           BpQ             StartTime         DayText    
+    ##  PL1101E: 230   2011/2012:460   1:1587   1A:640   Min.   :  1.00   Min.   :  0.00   Min.   :   0.00   Min.   :   0        Min.   :   0.0   New Students [P]                           : 319   Level 1: 230   Min.   : 0.00000   Min.   : 800   Friday   : 102  
+    ##  PL3232 : 134   2013/2014:449   2:1291   1B:386   1st Qu.:  4.00   1st Qu.:  1.00   1st Qu.:   1.00   1st Qu.:   1        1st Qu.:   1.0   NUS Students [G]                           : 135   Level 2: 182   1st Qu.: 0.02128   1st Qu.:1200   Monday   : 116  
+    ##  PL3236 : 121   2015/2016:423            1C:289   Median : 14.00   Median :  3.00   Median :   1.00   Median :   1        Median : 350.0   NUS Students [P, G]                        : 339   Level 3:1623   Median : 0.30000   Median :1400   Thursday : 159  
+    ##  PL3234 : 120   2014/2015:398            2A:419   Mean   : 25.09   Mean   : 12.38   Mean   :  69.39   Mean   : 251        Mean   : 718.1   NUS Students [P]                           : 336   Level 4: 843   Mean   : 1.01954   Mean   :1336   Tuesday  : 134  
+    ##  PL3235 : 119   2016/2017:349            2B:467   3rd Qu.: 32.00   3rd Qu.:  9.00   3rd Qu.:   8.00   3rd Qu.: 201        3rd Qu.:1232.8   Returning Students [P]                     :1231                  3rd Qu.: 1.25000   3rd Qu.:1575   Wednesday: 143  
+    ##  PL3233 : 117   2012/2013:345            3A:376   Max.   :430.00   Max.   :491.00   Max.   :2430.00   Max.   :3459        Max.   :4801.0   Returning Students [P] and NUS Students [G]: 171                  Max.   :18.00000   Max.   :1800   NA's     :2224  
+    ##  (Other):2037   (Other)  :454            3B:301                                                                                            Returning Students and New Students [P]    : 347                                     NA's   :2224
+
+</details>
 
 ## Univariate Histograms
 
@@ -337,7 +297,7 @@ for(r in facnames.mod)
   ylab("Count") +
   ggtitle(paste0("Count of ", r)) +
   theme_classic() + 
-  theme(axis.text.x = element_text(angle = 90, size = 10, vjust = -1),
+  theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3),
         axis.title.x = element_blank())
   )
 }
@@ -375,7 +335,7 @@ for(r in numnames)
   ylab("Histogram") +
   ggtitle(paste0("Frequency of ", r)) +
   theme_classic() + 
-  theme(axis.text.x = element_text(angle = 90, size = 10, vjust = -1),
+  theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3),
         axis.title.x = element_text())
   )
 }
@@ -401,11 +361,11 @@ for(r in numnames)
 
 ![](README_files/figure-gfm/explore2-5.png)<!-- -->
 
-    ## Histogram Of StartTime
+    ## Histogram Of BpQ
 
 ![](README_files/figure-gfm/explore2-6.png)<!-- -->
 
-    ## Histogram Of BpQ
+    ## Histogram Of StartTime
 
 ![](README_files/figure-gfm/explore2-7.png)<!-- -->
 
@@ -444,7 +404,7 @@ for(r in 1:length(facnames.mod))
          geom_text() + 
          scale_fill_gradient(low = "white", high = "violetred") + 
          theme_minimal() + 
-         theme(axis.text.x = element_text(angle = 90, size = 10, vjust = -1))
+         theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
      )
    }
   }
@@ -528,7 +488,7 @@ for(r in 1:length(numnames))
          geom_label(aes(x = Inf, y = Inf, label = paste0("Standardized Regression Coefficient = ",
                                                          round(stdreg$coefficients[2],3)),
                         hjust = 1, vjust = 1)) + 
-         theme(axis.text.x = element_text(angle = 90, size = 10, vjust = -1))
+         theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
      )
    }
   }
@@ -551,11 +511,11 @@ for(r in 1:length(numnames))
 
 ![](README_files/figure-gfm/exploreconcon-4.png)<!-- -->
 
-    ## Quota ~ StartTime
+    ## Quota ~ BpQ
 
 ![](README_files/figure-gfm/exploreconcon-5.png)<!-- -->
 
-    ## Quota ~ BpQ
+    ## Quota ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcon-6.png)<!-- -->
 
@@ -571,11 +531,11 @@ for(r in 1:length(numnames))
 
 ![](README_files/figure-gfm/exploreconcon-9.png)<!-- -->
 
-    ## Bidders ~ StartTime
+    ## Bidders ~ BpQ
 
 ![](README_files/figure-gfm/exploreconcon-10.png)<!-- -->
 
-    ## Bidders ~ BpQ
+    ## Bidders ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcon-11.png)<!-- -->
 
@@ -587,11 +547,11 @@ for(r in 1:length(numnames))
 
 ![](README_files/figure-gfm/exploreconcon-13.png)<!-- -->
 
-    ## LowestBid ~ StartTime
+    ## LowestBid ~ BpQ
 
 ![](README_files/figure-gfm/exploreconcon-14.png)<!-- -->
 
-    ## LowestBid ~ BpQ
+    ## LowestBid ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcon-15.png)<!-- -->
 
@@ -599,23 +559,23 @@ for(r in 1:length(numnames))
 
 ![](README_files/figure-gfm/exploreconcon-16.png)<!-- -->
 
-    ## LowestSuccessfulBid ~ StartTime
+    ## LowestSuccessfulBid ~ BpQ
 
 ![](README_files/figure-gfm/exploreconcon-17.png)<!-- -->
 
-    ## LowestSuccessfulBid ~ BpQ
+    ## LowestSuccessfulBid ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcon-18.png)<!-- -->
 
-    ## HighestBid ~ StartTime
+    ## HighestBid ~ BpQ
 
 ![](README_files/figure-gfm/exploreconcon-19.png)<!-- -->
 
-    ## HighestBid ~ BpQ
+    ## HighestBid ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcon-20.png)<!-- -->
 
-    ## StartTime ~ BpQ
+    ## BpQ ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcon-21.png)<!-- -->
 
@@ -630,7 +590,9 @@ for(r in 1:length(numnames))
 ``` r
 corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(mydata))]),
                upper = "color",
-               tl.pos = "lt")
+               tl.pos = "lt",
+               tl.cex = 0.5,
+               cl.cex = 0.5)
 ```
 
 ![](README_files/figure-gfm/corrmatrix-1.png)<!-- -->
@@ -653,7 +615,7 @@ for(r in facnames.mod)
       geom_bar(stat = "identity") + 
       theme_classic() + 
       theme(legend.position = "none",
-            axis.text.x = element_text(angle = 90, size = 10, vjust = -1))
+            axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
     )
   }
 }
@@ -679,11 +641,11 @@ for(r in facnames.mod)
 
 ![](README_files/figure-gfm/exploreconcat-5.png)<!-- -->
 
-    ## AcadYear ~ StartTime
+    ## AcadYear ~ BpQ
 
 ![](README_files/figure-gfm/exploreconcat-6.png)<!-- -->
 
-    ## AcadYear ~ BpQ
+    ## AcadYear ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcat-7.png)<!-- -->
 
@@ -707,11 +669,11 @@ for(r in facnames.mod)
 
 ![](README_files/figure-gfm/exploreconcat-12.png)<!-- -->
 
-    ## Semester ~ StartTime
+    ## Semester ~ BpQ
 
 ![](README_files/figure-gfm/exploreconcat-13.png)<!-- -->
 
-    ## Semester ~ BpQ
+    ## Semester ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcat-14.png)<!-- -->
 
@@ -735,11 +697,11 @@ for(r in facnames.mod)
 
 ![](README_files/figure-gfm/exploreconcat-19.png)<!-- -->
 
-    ## Round ~ StartTime
+    ## Round ~ BpQ
 
 ![](README_files/figure-gfm/exploreconcat-20.png)<!-- -->
 
-    ## Round ~ BpQ
+    ## Round ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcat-21.png)<!-- -->
 
@@ -763,11 +725,11 @@ for(r in facnames.mod)
 
 ![](README_files/figure-gfm/exploreconcat-26.png)<!-- -->
 
-    ## Level ~ StartTime
+    ## Level ~ BpQ
 
 ![](README_files/figure-gfm/exploreconcat-27.png)<!-- -->
 
-    ## Level ~ BpQ
+    ## Level ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcat-28.png)<!-- -->
 
@@ -791,11 +753,11 @@ for(r in facnames.mod)
 
 ![](README_files/figure-gfm/exploreconcat-33.png)<!-- -->
 
-    ## DayText ~ StartTime
+    ## DayText ~ BpQ
 
 ![](README_files/figure-gfm/exploreconcat-34.png)<!-- -->
 
-    ## DayText ~ BpQ
+    ## DayText ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcat-35.png)<!-- -->
 
@@ -843,11 +805,11 @@ for(i in numnames)
 
 ![](README_files/figure-gfm/exploremodule-5.png)<!-- -->
 
-    ## ModuleCode ~ StartTime
+    ## ModuleCode ~ BpQ
 
 ![](README_files/figure-gfm/exploremodule-6.png)<!-- -->
 
-    ## ModuleCode ~ BpQ
+    ## ModuleCode ~ StartTime
 
 ![](README_files/figure-gfm/exploremodule-7.png)<!-- -->
 
