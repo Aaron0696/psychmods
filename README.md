@@ -628,7 +628,7 @@ for(r in 1:length(numnames))
 ### Correlation Matrix
 
 ``` r
-corrplot.mixed(cor(select_if(mydata, is.numeric)),
+corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(mydata))]),
                upper = "color",
                tl.pos = "lt")
 ```

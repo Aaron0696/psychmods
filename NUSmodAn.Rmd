@@ -188,11 +188,11 @@ numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numname
 
 ## Univariate Descriptive Statistics
 
-```{r unides, dpi = 96}
+```{r unides, dpi = 150}
 describe(mydata)
 ```
 
-```{r unisum, dpi = 96}
+```{r unisum, dpi = 150}
 summary(mydata)
 ```
 
@@ -201,7 +201,7 @@ summary(mydata)
 <details>
   <summary>View Histograms</summary>
 
-```{r explore1, warning = FALSE, eval = TRUE, dpi = 96}
+```{r explore1, warning = FALSE, eval = TRUE, dpi = 150}
 # plot the categorical variables
 # note: I did not include ModuleCode in this exploratory graph because it has too many levels (83)
 for(r in facnames.mod)
@@ -220,7 +220,7 @@ for(r in facnames.mod)
 }
 ```
 
-```{r explore2, warning = FALSE, eval = TRUE, dpi = 96}
+```{r explore2, warning = FALSE, eval = TRUE, dpi = 150}
 # plot the continuous variables
 for(r in numnames)
 {
@@ -247,7 +247,7 @@ for(r in numnames)
 
 ### Categorical-Categorical
 
-```{r explorecatcat, warning = FALSE, eval = TRUE, , dpi = 96}
+```{r explorecatcat, warning = FALSE, eval = TRUE, , dpi = 150}
 # create vector to loop across
 for(r in 1:length(facnames.mod))
 {
@@ -286,7 +286,7 @@ for(r in 1:length(facnames.mod))
 
 ### Continuous-Continuous
 
-```{r exploreconcon, warning = FALSE, eval = TRUE, dpi = 96}
+```{r exploreconcon, warning = FALSE, eval = TRUE, dpi = 150}
 for(r in 1:length(numnames))
 {
   for(i in 1:length(numnames))
@@ -332,8 +332,8 @@ for(r in 1:length(numnames))
 
 ### Correlation Matrix
 
-```{r corrmatrix, fig.width = 7, fig.height = 7, dpi = 96}
-corrplot.mixed(cor(select_if(mydata, is.numeric)),
+```{r corrmatrix, fig.width = 7, fig.height = 7, dpi = 150}
+corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(mydata))]),
                upper = "color",
                tl.pos = "lt")
 ```
@@ -344,7 +344,7 @@ corrplot.mixed(cor(select_if(mydata, is.numeric)),
 
 ### Continuous-Categorical
 
-```{r exploreconcat, warning = FALSE, eval = TRUE, dpi = 96}
+```{r exploreconcat, warning = FALSE, eval = TRUE, dpi = 150}
 for(r in facnames.mod)
 {
   for(i in numnames)
@@ -369,7 +369,7 @@ for(r in facnames.mod)
 
 ### By Module
 
-```{r exploremodule, fig.height = 12, warning = FALSE, eval = TRUE, dpi = 96}
+```{r exploremodule, fig.height = 12, warning = FALSE, eval = TRUE, dpi = 150}
 for(i in numnames)
 {
   cat(paste0("ModuleCode"," ~ ",i))
