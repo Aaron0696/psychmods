@@ -22,6 +22,9 @@ Aaron0696
 # Set Up
 
 ``` r
+# rmarkdown::render(input = "NUSmodAn.Rmd",
+#                   output_format = "github_document",
+#                   output_file = "README.md")
 library(semTools)
 library(ggplot2)
 library(rjson)
@@ -266,13 +269,16 @@ for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level", "StudentAcctT
   mydata[,grep(r, names(mydata))] <- factor(mydata[,grep(r, names(mydata))])
 }
 
+# rename levels with long names
+
 # create new column Bids Per Quota (BpQ)
 mydata$BpQ <- with(mydata, Bidders/Quota)
 # create vector of the column names which are factors
 facnames <- names(select_if(mydata, is.factor))
-facnames.mod <- facnames[-grep("ModuleCode", facnames)]
+facnames.mod <- facnames[-grep("ModuleCode|StudentAcctType", facnames)]
 # create vector of the column names which are numeric
 numnames <- names(select_if(mydata, is.numeric))
+numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numnames)]
 ```
 
 # Explore Data
@@ -349,17 +355,13 @@ for(r in facnames.mod)
 
 ![](README_files/figure-gfm/explore1-3.png)<!-- -->
 
-    ## Histogram Of StudentAcctType
+    ## Histogram Of Level
 
 ![](README_files/figure-gfm/explore1-4.png)<!-- -->
 
-    ## Histogram Of Level
-
-![](README_files/figure-gfm/explore1-5.png)<!-- -->
-
     ## Histogram Of DayText
 
-![](README_files/figure-gfm/explore1-6.png)<!-- -->
+![](README_files/figure-gfm/explore1-5.png)<!-- -->
 
 ``` r
 # plot the continuous variables
@@ -457,57 +459,37 @@ for(r in 1:length(facnames.mod))
 
 ![](README_files/figure-gfm/explorecatcat-2.png)<!-- -->
 
-    ## AcadYear ~ StudentAcctType
+    ## AcadYear ~ Level
 
 ![](README_files/figure-gfm/explorecatcat-3.png)<!-- -->
 
-    ## AcadYear ~ Level
+    ## AcadYear ~ DayText
 
 ![](README_files/figure-gfm/explorecatcat-4.png)<!-- -->
 
-    ## AcadYear ~ DayText
+    ## Semester ~ Round
 
 ![](README_files/figure-gfm/explorecatcat-5.png)<!-- -->
 
-    ## Semester ~ Round
+    ## Semester ~ Level
 
 ![](README_files/figure-gfm/explorecatcat-6.png)<!-- -->
 
-    ## Semester ~ StudentAcctType
+    ## Semester ~ DayText
 
 ![](README_files/figure-gfm/explorecatcat-7.png)<!-- -->
 
-    ## Semester ~ Level
+    ## Round ~ Level
 
 ![](README_files/figure-gfm/explorecatcat-8.png)<!-- -->
 
-    ## Semester ~ DayText
+    ## Round ~ DayText
 
 ![](README_files/figure-gfm/explorecatcat-9.png)<!-- -->
 
-    ## Round ~ StudentAcctType
-
-![](README_files/figure-gfm/explorecatcat-10.png)<!-- -->
-
-    ## Round ~ Level
-
-![](README_files/figure-gfm/explorecatcat-11.png)<!-- -->
-
-    ## Round ~ DayText
-
-![](README_files/figure-gfm/explorecatcat-12.png)<!-- -->
-
-    ## StudentAcctType ~ Level
-
-![](README_files/figure-gfm/explorecatcat-13.png)<!-- -->
-
-    ## StudentAcctType ~ DayText
-
-![](README_files/figure-gfm/explorecatcat-14.png)<!-- -->
-
     ## Level ~ DayText
 
-![](README_files/figure-gfm/explorecatcat-15.png)<!-- -->
+![](README_files/figure-gfm/explorecatcat-10.png)<!-- -->
 
 </details>
 
@@ -651,7 +633,7 @@ corrplot.mixed(cor(select_if(mydata, is.numeric)),
                tl.pos = "lt")
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+![](README_files/figure-gfm/corrmatrix-1.png)<!-- -->
 
 <details>
 
@@ -761,89 +743,61 @@ for(r in facnames.mod)
 
 ![](README_files/figure-gfm/exploreconcat-21.png)<!-- -->
 
-    ## StudentAcctType ~ Quota
+    ## Level ~ Quota
 
 ![](README_files/figure-gfm/exploreconcat-22.png)<!-- -->
 
-    ## StudentAcctType ~ Bidders
+    ## Level ~ Bidders
 
 ![](README_files/figure-gfm/exploreconcat-23.png)<!-- -->
 
-    ## StudentAcctType ~ LowestBid
+    ## Level ~ LowestBid
 
 ![](README_files/figure-gfm/exploreconcat-24.png)<!-- -->
 
-    ## StudentAcctType ~ LowestSuccessfulBid
+    ## Level ~ LowestSuccessfulBid
 
 ![](README_files/figure-gfm/exploreconcat-25.png)<!-- -->
 
-    ## StudentAcctType ~ HighestBid
+    ## Level ~ HighestBid
 
 ![](README_files/figure-gfm/exploreconcat-26.png)<!-- -->
 
-    ## StudentAcctType ~ StartTime
+    ## Level ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcat-27.png)<!-- -->
 
-    ## StudentAcctType ~ BpQ
+    ## Level ~ BpQ
 
 ![](README_files/figure-gfm/exploreconcat-28.png)<!-- -->
 
-    ## Level ~ Quota
+    ## DayText ~ Quota
 
 ![](README_files/figure-gfm/exploreconcat-29.png)<!-- -->
 
-    ## Level ~ Bidders
+    ## DayText ~ Bidders
 
 ![](README_files/figure-gfm/exploreconcat-30.png)<!-- -->
 
-    ## Level ~ LowestBid
+    ## DayText ~ LowestBid
 
 ![](README_files/figure-gfm/exploreconcat-31.png)<!-- -->
 
-    ## Level ~ LowestSuccessfulBid
+    ## DayText ~ LowestSuccessfulBid
 
 ![](README_files/figure-gfm/exploreconcat-32.png)<!-- -->
 
-    ## Level ~ HighestBid
+    ## DayText ~ HighestBid
 
 ![](README_files/figure-gfm/exploreconcat-33.png)<!-- -->
 
-    ## Level ~ StartTime
+    ## DayText ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcat-34.png)<!-- -->
 
-    ## Level ~ BpQ
-
-![](README_files/figure-gfm/exploreconcat-35.png)<!-- -->
-
-    ## DayText ~ Quota
-
-![](README_files/figure-gfm/exploreconcat-36.png)<!-- -->
-
-    ## DayText ~ Bidders
-
-![](README_files/figure-gfm/exploreconcat-37.png)<!-- -->
-
-    ## DayText ~ LowestBid
-
-![](README_files/figure-gfm/exploreconcat-38.png)<!-- -->
-
-    ## DayText ~ LowestSuccessfulBid
-
-![](README_files/figure-gfm/exploreconcat-39.png)<!-- -->
-
-    ## DayText ~ HighestBid
-
-![](README_files/figure-gfm/exploreconcat-40.png)<!-- -->
-
-    ## DayText ~ StartTime
-
-![](README_files/figure-gfm/exploreconcat-41.png)<!-- -->
-
     ## DayText ~ BpQ
 
-![](README_files/figure-gfm/exploreconcat-42.png)<!-- -->
+![](README_files/figure-gfm/exploreconcat-35.png)<!-- -->
 
 </details>
 

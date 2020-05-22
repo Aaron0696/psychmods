@@ -5,8 +5,8 @@ output:
   github_document:
     toc: true
     toc_depth: 2
-    fig_width: 5
-    fig_height: 5
+    fig_width: 4
+    fig_height: 4
   html_document:
     fig_align: center
     code_folding: show
@@ -18,10 +18,12 @@ output:
     df_print: paged
 ---
 
-
 # Set Up
 
 ```{r setup, warning = FALSE, message = FALSE}
+# rmarkdown::render(input = "NUSmodAn.Rmd",
+#                   output_format = "github_document",
+#                   output_file = "README.md")
 library(semTools)
 library(ggplot2)
 library(rjson)
@@ -170,24 +172,27 @@ for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level", "StudentAcctT
   mydata[,grep(r, names(mydata))] <- factor(mydata[,grep(r, names(mydata))])
 }
 
+# rename levels with long names
+
 # create new column Bids Per Quota (BpQ)
 mydata$BpQ <- with(mydata, Bidders/Quota)
 # create vector of the column names which are factors
 facnames <- names(select_if(mydata, is.factor))
-facnames.mod <- facnames[-grep("ModuleCode", facnames)]
+facnames.mod <- facnames[-grep("ModuleCode|StudentAcctType", facnames)]
 # create vector of the column names which are numeric
 numnames <- names(select_if(mydata, is.numeric))
+numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numnames)]
 ```
 
 # Explore Data
 
 ## Univariate Descriptive Statistics
 
-```{r unides, dpi = 300}
+```{r unides, dpi = 96}
 describe(mydata)
 ```
 
-```{r unisum, dpi = 300}
+```{r unisum, dpi = 96}
 summary(mydata)
 ```
 
@@ -196,7 +201,7 @@ summary(mydata)
 <details>
   <summary>View Histograms</summary>
 
-```{r explore1, warning = FALSE, eval = TRUE, dpi = 300}
+```{r explore1, warning = FALSE, eval = TRUE, dpi = 96}
 # plot the categorical variables
 # note: I did not include ModuleCode in this exploratory graph because it has too many levels (83)
 for(r in facnames.mod)
@@ -215,7 +220,7 @@ for(r in facnames.mod)
 }
 ```
 
-```{r explore2, warning = FALSE, eval = TRUE, dpi = 300}
+```{r explore2, warning = FALSE, eval = TRUE, dpi = 96}
 # plot the continuous variables
 for(r in numnames)
 {
@@ -242,7 +247,7 @@ for(r in numnames)
 
 ### Categorical-Categorical
 
-```{r explorecatcat, warning = FALSE, eval = TRUE, , dpi = 300}
+```{r explorecatcat, warning = FALSE, eval = TRUE, , dpi = 96}
 # create vector to loop across
 for(r in 1:length(facnames.mod))
 {
@@ -281,7 +286,7 @@ for(r in 1:length(facnames.mod))
 
 ### Continuous-Continuous
 
-```{r exploreconcon, warning = FALSE, eval = TRUE, dpi = 300}
+```{r exploreconcon, warning = FALSE, eval = TRUE, dpi = 96}
 for(r in 1:length(numnames))
 {
   for(i in 1:length(numnames))
@@ -327,7 +332,7 @@ for(r in 1:length(numnames))
 
 ### Correlation Matrix
 
-```{r, fig.width = 7, fig.height = 7, dpi = 300}
+```{r corrmatrix, fig.width = 7, fig.height = 7, dpi = 96}
 corrplot.mixed(cor(select_if(mydata, is.numeric)),
                upper = "color",
                tl.pos = "lt")
@@ -339,7 +344,7 @@ corrplot.mixed(cor(select_if(mydata, is.numeric)),
 
 ### Continuous-Categorical
 
-```{r exploreconcat, warning = FALSE, eval = TRUE, dpi = 300}
+```{r exploreconcat, warning = FALSE, eval = TRUE, dpi = 96}
 for(r in facnames.mod)
 {
   for(i in numnames)
@@ -364,7 +369,7 @@ for(r in facnames.mod)
 
 ### By Module
 
-```{r exploremodule, fig.height = 12, warning = FALSE, eval = TRUE, dpi = 300}
+```{r exploremodule, fig.height = 12, warning = FALSE, eval = TRUE, dpi = 96}
 for(i in numnames)
 {
   cat(paste0("ModuleCode"," ~ ",i))
