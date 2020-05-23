@@ -6,7 +6,7 @@ Aaron0696
     Data.](#phase-1-setting-up-environment-packages-and-loading-data.)
   - [Phase 2: Filter, Transform And Merge
     Data](#phase-2-filter-transform-and-merge-data)
-  - [Phase 3: Brute Force Exploration](#phase-3-brute-force-exploration)
+  - [Phase 3: Data Diagnostics](#phase-3-data-diagnostics)
   - [Is It Easier To Bid For Modules With Extremely Early/Late
     Lectures?](#is-it-easier-to-bid-for-modules-with-extremely-earlylate-lectures)
 
@@ -297,7 +297,7 @@ mydata$DayText <- factor(mydata$DayText,
 
 </details>
 
-# Phase 3: Brute Force Exploration
+# Phase 3: Data Diagnostics
 
   - Plot univariate histograms and bivariate plots using loops for
     **almost every** combination of variables.
@@ -309,13 +309,16 @@ mydata$DayText <- factor(mydata$DayText,
       - For example: The mean of `Bidders` is calculated across all
         academic years, all bidding rounds, all modules…
   - What I am looking out for in this section are odd patterns, like
-    zeroes in places where they shouldn’t be.
+    zeroes in places where they shouldn’t be, missing data, highly
+    non-normal data, variables with outliers, etc…
+  - Some observations and thoughts
+      - The bidding statistics are highly non-normal, likely due to
+        being bounded by zero (they cannot bid negative points or have
+        negative bidders). May consider using zero-inflated or poisson
+        regression if considering these statistics as dependent
+        variables.
 
 ## Univariate Descriptive Statistics
-
-<details>
-
-<summary>View Descriptive Statistics</summary>
 
 ``` r
 describe(mydata)
@@ -351,8 +354,6 @@ summary(mydata)
     ##  PL3233 : 117   2012/2013:345            3A:376   Max.   :430.00   Max.   :491.00   Max.   :2430.00   Max.   :3459        Max.   :4801.0   Returning Students [P] and NUS Students [G]: 171                  Max.   :18.00000   Max.   :1800   NA's     :2224                   
     ##  (Other):2037   (Other)  :454            3B:301                                                                                            Returning Students and New Students [P]    : 347                                     NA's   :2224
 
-</details>
-
 ## Univariate Histograms
 
 <details>
@@ -378,30 +379,6 @@ for(r in facnames.mod)
 }
 ```
 
-    ## Histogram Of AcadYear
-
-![](README_files/figure-gfm/explore1-1.png)<!-- -->
-
-    ## Histogram Of Semester
-
-![](README_files/figure-gfm/explore1-2.png)<!-- -->
-
-    ## Histogram Of Round
-
-![](README_files/figure-gfm/explore1-3.png)<!-- -->
-
-    ## Histogram Of Level
-
-![](README_files/figure-gfm/explore1-4.png)<!-- -->
-
-    ## Histogram Of DayText
-
-![](README_files/figure-gfm/explore1-5.png)<!-- -->
-
-    ## Histogram Of LessonTime
-
-![](README_files/figure-gfm/explore1-6.png)<!-- -->
-
 ``` r
 # plot the continuous variables
 for(r in numnames)
@@ -419,34 +396,6 @@ for(r in numnames)
   )
 }
 ```
-
-    ## Histogram Of Quota
-
-![](README_files/figure-gfm/explore2-1.png)<!-- -->
-
-    ## Histogram Of Bidders
-
-![](README_files/figure-gfm/explore2-2.png)<!-- -->
-
-    ## Histogram Of LowestBid
-
-![](README_files/figure-gfm/explore2-3.png)<!-- -->
-
-    ## Histogram Of LowestSuccessfulBid
-
-![](README_files/figure-gfm/explore2-4.png)<!-- -->
-
-    ## Histogram Of HighestBid
-
-![](README_files/figure-gfm/explore2-5.png)<!-- -->
-
-    ## Histogram Of BpQ
-
-![](README_files/figure-gfm/explore2-6.png)<!-- -->
-
-    ## Histogram Of StartTime
-
-![](README_files/figure-gfm/explore2-7.png)<!-- -->
 
 </details>
 
@@ -489,66 +438,6 @@ for(r in 1:length(facnames.mod))
   }
 }
 ```
-
-    ## AcadYear ~ Semester
-
-![](README_files/figure-gfm/explorecatcat-1.png)<!-- -->
-
-    ## AcadYear ~ Round
-
-![](README_files/figure-gfm/explorecatcat-2.png)<!-- -->
-
-    ## AcadYear ~ Level
-
-![](README_files/figure-gfm/explorecatcat-3.png)<!-- -->
-
-    ## AcadYear ~ DayText
-
-![](README_files/figure-gfm/explorecatcat-4.png)<!-- -->
-
-    ## AcadYear ~ LessonTime
-
-![](README_files/figure-gfm/explorecatcat-5.png)<!-- -->
-
-    ## Semester ~ Round
-
-![](README_files/figure-gfm/explorecatcat-6.png)<!-- -->
-
-    ## Semester ~ Level
-
-![](README_files/figure-gfm/explorecatcat-7.png)<!-- -->
-
-    ## Semester ~ DayText
-
-![](README_files/figure-gfm/explorecatcat-8.png)<!-- -->
-
-    ## Semester ~ LessonTime
-
-![](README_files/figure-gfm/explorecatcat-9.png)<!-- -->
-
-    ## Round ~ Level
-
-![](README_files/figure-gfm/explorecatcat-10.png)<!-- -->
-
-    ## Round ~ DayText
-
-![](README_files/figure-gfm/explorecatcat-11.png)<!-- -->
-
-    ## Round ~ LessonTime
-
-![](README_files/figure-gfm/explorecatcat-12.png)<!-- -->
-
-    ## Level ~ DayText
-
-![](README_files/figure-gfm/explorecatcat-13.png)<!-- -->
-
-    ## Level ~ LessonTime
-
-![](README_files/figure-gfm/explorecatcat-14.png)<!-- -->
-
-    ## DayText ~ LessonTime
-
-![](README_files/figure-gfm/explorecatcat-15.png)<!-- -->
 
 </details>
 
@@ -594,90 +483,6 @@ for(r in 1:length(numnames))
 }
 ```
 
-    ## Quota ~ Bidders
-
-![](README_files/figure-gfm/exploreconcon-1.png)<!-- -->
-
-    ## Quota ~ LowestBid
-
-![](README_files/figure-gfm/exploreconcon-2.png)<!-- -->
-
-    ## Quota ~ LowestSuccessfulBid
-
-![](README_files/figure-gfm/exploreconcon-3.png)<!-- -->
-
-    ## Quota ~ HighestBid
-
-![](README_files/figure-gfm/exploreconcon-4.png)<!-- -->
-
-    ## Quota ~ BpQ
-
-![](README_files/figure-gfm/exploreconcon-5.png)<!-- -->
-
-    ## Quota ~ StartTime
-
-![](README_files/figure-gfm/exploreconcon-6.png)<!-- -->
-
-    ## Bidders ~ LowestBid
-
-![](README_files/figure-gfm/exploreconcon-7.png)<!-- -->
-
-    ## Bidders ~ LowestSuccessfulBid
-
-![](README_files/figure-gfm/exploreconcon-8.png)<!-- -->
-
-    ## Bidders ~ HighestBid
-
-![](README_files/figure-gfm/exploreconcon-9.png)<!-- -->
-
-    ## Bidders ~ BpQ
-
-![](README_files/figure-gfm/exploreconcon-10.png)<!-- -->
-
-    ## Bidders ~ StartTime
-
-![](README_files/figure-gfm/exploreconcon-11.png)<!-- -->
-
-    ## LowestBid ~ LowestSuccessfulBid
-
-![](README_files/figure-gfm/exploreconcon-12.png)<!-- -->
-
-    ## LowestBid ~ HighestBid
-
-![](README_files/figure-gfm/exploreconcon-13.png)<!-- -->
-
-    ## LowestBid ~ BpQ
-
-![](README_files/figure-gfm/exploreconcon-14.png)<!-- -->
-
-    ## LowestBid ~ StartTime
-
-![](README_files/figure-gfm/exploreconcon-15.png)<!-- -->
-
-    ## LowestSuccessfulBid ~ HighestBid
-
-![](README_files/figure-gfm/exploreconcon-16.png)<!-- -->
-
-    ## LowestSuccessfulBid ~ BpQ
-
-![](README_files/figure-gfm/exploreconcon-17.png)<!-- -->
-
-    ## LowestSuccessfulBid ~ StartTime
-
-![](README_files/figure-gfm/exploreconcon-18.png)<!-- -->
-
-    ## HighestBid ~ BpQ
-
-![](README_files/figure-gfm/exploreconcon-19.png)<!-- -->
-
-    ## HighestBid ~ StartTime
-
-![](README_files/figure-gfm/exploreconcon-20.png)<!-- -->
-
-    ## BpQ ~ StartTime
-
-![](README_files/figure-gfm/exploreconcon-21.png)<!-- -->
-
 </details>
 
 <details>
@@ -720,174 +525,6 @@ for(r in facnames.mod)
 }
 ```
 
-    ## AcadYear ~ Quota
-
-![](README_files/figure-gfm/exploreconcat-1.png)<!-- -->
-
-    ## AcadYear ~ Bidders
-
-![](README_files/figure-gfm/exploreconcat-2.png)<!-- -->
-
-    ## AcadYear ~ LowestBid
-
-![](README_files/figure-gfm/exploreconcat-3.png)<!-- -->
-
-    ## AcadYear ~ LowestSuccessfulBid
-
-![](README_files/figure-gfm/exploreconcat-4.png)<!-- -->
-
-    ## AcadYear ~ HighestBid
-
-![](README_files/figure-gfm/exploreconcat-5.png)<!-- -->
-
-    ## AcadYear ~ BpQ
-
-![](README_files/figure-gfm/exploreconcat-6.png)<!-- -->
-
-    ## AcadYear ~ StartTime
-
-![](README_files/figure-gfm/exploreconcat-7.png)<!-- -->
-
-    ## Semester ~ Quota
-
-![](README_files/figure-gfm/exploreconcat-8.png)<!-- -->
-
-    ## Semester ~ Bidders
-
-![](README_files/figure-gfm/exploreconcat-9.png)<!-- -->
-
-    ## Semester ~ LowestBid
-
-![](README_files/figure-gfm/exploreconcat-10.png)<!-- -->
-
-    ## Semester ~ LowestSuccessfulBid
-
-![](README_files/figure-gfm/exploreconcat-11.png)<!-- -->
-
-    ## Semester ~ HighestBid
-
-![](README_files/figure-gfm/exploreconcat-12.png)<!-- -->
-
-    ## Semester ~ BpQ
-
-![](README_files/figure-gfm/exploreconcat-13.png)<!-- -->
-
-    ## Semester ~ StartTime
-
-![](README_files/figure-gfm/exploreconcat-14.png)<!-- -->
-
-    ## Round ~ Quota
-
-![](README_files/figure-gfm/exploreconcat-15.png)<!-- -->
-
-    ## Round ~ Bidders
-
-![](README_files/figure-gfm/exploreconcat-16.png)<!-- -->
-
-    ## Round ~ LowestBid
-
-![](README_files/figure-gfm/exploreconcat-17.png)<!-- -->
-
-    ## Round ~ LowestSuccessfulBid
-
-![](README_files/figure-gfm/exploreconcat-18.png)<!-- -->
-
-    ## Round ~ HighestBid
-
-![](README_files/figure-gfm/exploreconcat-19.png)<!-- -->
-
-    ## Round ~ BpQ
-
-![](README_files/figure-gfm/exploreconcat-20.png)<!-- -->
-
-    ## Round ~ StartTime
-
-![](README_files/figure-gfm/exploreconcat-21.png)<!-- -->
-
-    ## Level ~ Quota
-
-![](README_files/figure-gfm/exploreconcat-22.png)<!-- -->
-
-    ## Level ~ Bidders
-
-![](README_files/figure-gfm/exploreconcat-23.png)<!-- -->
-
-    ## Level ~ LowestBid
-
-![](README_files/figure-gfm/exploreconcat-24.png)<!-- -->
-
-    ## Level ~ LowestSuccessfulBid
-
-![](README_files/figure-gfm/exploreconcat-25.png)<!-- -->
-
-    ## Level ~ HighestBid
-
-![](README_files/figure-gfm/exploreconcat-26.png)<!-- -->
-
-    ## Level ~ BpQ
-
-![](README_files/figure-gfm/exploreconcat-27.png)<!-- -->
-
-    ## Level ~ StartTime
-
-![](README_files/figure-gfm/exploreconcat-28.png)<!-- -->
-
-    ## DayText ~ Quota
-
-![](README_files/figure-gfm/exploreconcat-29.png)<!-- -->
-
-    ## DayText ~ Bidders
-
-![](README_files/figure-gfm/exploreconcat-30.png)<!-- -->
-
-    ## DayText ~ LowestBid
-
-![](README_files/figure-gfm/exploreconcat-31.png)<!-- -->
-
-    ## DayText ~ LowestSuccessfulBid
-
-![](README_files/figure-gfm/exploreconcat-32.png)<!-- -->
-
-    ## DayText ~ HighestBid
-
-![](README_files/figure-gfm/exploreconcat-33.png)<!-- -->
-
-    ## DayText ~ BpQ
-
-![](README_files/figure-gfm/exploreconcat-34.png)<!-- -->
-
-    ## DayText ~ StartTime
-
-![](README_files/figure-gfm/exploreconcat-35.png)<!-- -->
-
-    ## LessonTime ~ Quota
-
-![](README_files/figure-gfm/exploreconcat-36.png)<!-- -->
-
-    ## LessonTime ~ Bidders
-
-![](README_files/figure-gfm/exploreconcat-37.png)<!-- -->
-
-    ## LessonTime ~ LowestBid
-
-![](README_files/figure-gfm/exploreconcat-38.png)<!-- -->
-
-    ## LessonTime ~ LowestSuccessfulBid
-
-![](README_files/figure-gfm/exploreconcat-39.png)<!-- -->
-
-    ## LessonTime ~ HighestBid
-
-![](README_files/figure-gfm/exploreconcat-40.png)<!-- -->
-
-    ## LessonTime ~ BpQ
-
-![](README_files/figure-gfm/exploreconcat-41.png)<!-- -->
-
-    ## LessonTime ~ StartTime
-
-![](README_files/figure-gfm/exploreconcat-42.png)<!-- -->
-
 </details>
 
 <details>
@@ -911,34 +548,6 @@ for(i in numnames)
   )
 }
 ```
-
-    ## ModuleCode ~ Quota
-
-![](README_files/figure-gfm/exploremodule-1.png)<!-- -->
-
-    ## ModuleCode ~ Bidders
-
-![](README_files/figure-gfm/exploremodule-2.png)<!-- -->
-
-    ## ModuleCode ~ LowestBid
-
-![](README_files/figure-gfm/exploremodule-3.png)<!-- -->
-
-    ## ModuleCode ~ LowestSuccessfulBid
-
-![](README_files/figure-gfm/exploremodule-4.png)<!-- -->
-
-    ## ModuleCode ~ HighestBid
-
-![](README_files/figure-gfm/exploremodule-5.png)<!-- -->
-
-    ## ModuleCode ~ BpQ
-
-![](README_files/figure-gfm/exploremodule-6.png)<!-- -->
-
-    ## ModuleCode ~ StartTime
-
-![](README_files/figure-gfm/exploremodule-7.png)<!-- -->
 
 </details>
 
