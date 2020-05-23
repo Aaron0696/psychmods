@@ -31,7 +31,6 @@ Aaron0696
           - [Continuous-Continuous](#continuous-continuous)
           - [Correlation Matrix](#correlation-matrix)
           - [Continuous-Categorical](#continuous-categorical)
-          - [By Module](#by-module)
   - [Phase 5: Exploration](#phase-5-exploration)
 
   - Notes:
@@ -461,7 +460,7 @@ for(r in numnames)
 
 <details>
 
-<summary><b>View Categorical-Categorical</b></summary>
+<summary><b>View Categorical-Categorical Heatmaps</b></summary>
 
 ### Categorical-Categorical
 
@@ -562,7 +561,7 @@ for(r in 1:length(facnames.mod))
 
 <details>
 
-<summary><b>View Continuous-Continuous</b></summary>
+<summary><b>View Continuous-Continuous Scatterplots</b></summary>
 
 ### Continuous-Continuous
 
@@ -686,6 +685,12 @@ for(r in 1:length(numnames))
 
 <img src="README_files/figure-gfm/exploreconcon-21.png" width="50%" />
 
+</details>
+
+<details>
+
+<summary><b>View Continuous-Continuous Correlation Matrix</b></summary>
+
 ### Correlation Matrix
 
 ``` r
@@ -698,11 +703,13 @@ corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(myd
 
 <img src="README_files/figure-gfm/corrmatrix-1.png" width="50%" />
 
+</details>
+
 ### Continuous-Categorical
 
 <details>
 
-<summary><b>View Continuous-Categorical</b></summary>
+<summary><b>View Continuous-Categorical Boxplots</b></summary>
 
 ``` r
 for(r in facnames.mod)
@@ -713,7 +720,7 @@ for(r in facnames.mod)
     # graph
     plot(
       ggplot(data = mydata, aes_string(x = r, y = i, fill = r)) + 
-        geom_bar(stat = "identity") + 
+        geom_boxplot() + 
         theme_classic() + 
         theme(legend.position = "none",
               axis.text.x = element_text(angle = 90, vjust = -0.3))
@@ -889,52 +896,6 @@ for(r in facnames.mod)
     ## LessonTime ~ StartTime
 
 <img src="README_files/figure-gfm/exploreconcat-42.png" width="50%" />
-
-### By Module
-
-``` r
-for(i in numnames)
-{
-  cat(paste0("ModuleCode"," ~ ",i))
-  # graph
-  plot(
-    ggplot(data = mydata, aes_string(x = "ModuleCode", y = i, fill = "ModuleCode")) + 
-      geom_bar(stat = "identity") + 
-      theme_classic() + 
-      theme(legend.position = "none",
-            axis.text.x = element_text(angle = 90, vjust = -1)) + 
-      coord_flip()
-  )
-}
-```
-
-    ## ModuleCode ~ Quota
-
-<img src="README_files/figure-gfm/exploremodule-1.png" width="50%" />
-
-    ## ModuleCode ~ Bidders
-
-<img src="README_files/figure-gfm/exploremodule-2.png" width="50%" />
-
-    ## ModuleCode ~ LowestBid
-
-<img src="README_files/figure-gfm/exploremodule-3.png" width="50%" />
-
-    ## ModuleCode ~ LowestSuccessfulBid
-
-<img src="README_files/figure-gfm/exploremodule-4.png" width="50%" />
-
-    ## ModuleCode ~ HighestBid
-
-<img src="README_files/figure-gfm/exploremodule-5.png" width="50%" />
-
-    ## ModuleCode ~ BpQ
-
-<img src="README_files/figure-gfm/exploremodule-6.png" width="50%" />
-
-    ## ModuleCode ~ StartTime
-
-<img src="README_files/figure-gfm/exploremodule-7.png" width="50%" />
 
 </details>
 
