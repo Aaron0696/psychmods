@@ -4,23 +4,23 @@ Aaron0696
 
   - [Phase 1: Setting Up Environment, Packages And Loading
     Data.](#phase-1-setting-up-environment-packages-and-loading-data.)
-      - [Packages And Options](#packages-and-options)
-      - [Bidding Data From `nusmods`](#bidding-data-from-nusmods)
-      - [Load `myBid.RDS`](#load-mybid.rds)
-      - [Module Information](#module-information)
-      - [Load `myModInfo.RDS`](#load-mymodinfo.rds)
+      - [\>Packages And Options](#packages-and-options)
+      - [\>\>Bidding Data From `nusmods`](#bidding-data-from-nusmods)
+      - [\>\>Load `myBid.RDS`](#load-mybid.rds)
+      - [\>Module Information](#module-information)
+      - [\>\>Load `myModInfo.RDS`](#load-mymodinfo.rds)
   - [Phase 2: Filter, Transform And Merge
     Data](#phase-2-filter-transform-and-merge-data)
-      - [`myModInfo`](#mymodinfo)
-          - [Filter](#filter)
-      - [`myBid`](#mybid)
-          - [Filter](#filter-1)
-      - [Transform And Merge](#transform-and-merge)
-      - [Coercing Columns To
+      - [\>`myModInfo`](#mymodinfo)
+          - [\>\>Filter](#filter)
+      - [\>`myBid`](#mybid)
+          - [\>\>Filter](#filter-1)
+      - [\>\>Transform And Merge](#transform-and-merge)
+      - [\>Coercing Columns To
         Factors/Numeric](#coercing-columns-to-factorsnumeric)
-      - [Vectors Of Column Names](#vectors-of-column-names)
-      - [Rearranging `DayText` Levels](#rearranging-daytext-levels)
-      - [Rearranging `LessonTime`
+      - [\>Vectors Of Column Names](#vectors-of-column-names)
+      - [\>Rearranging `DayText` Levels](#rearranging-daytext-levels)
+      - [\>Rearranging `LessonTime`
         Levels](#rearranging-lessontime-levels)
   - [Phase 3: Data Diagnostics](#phase-3-data-diagnostics)
       - [Univariate Descriptive
@@ -52,7 +52,7 @@ Aaron0696
 
 # Phase 1: Setting Up Environment, Packages And Loading Data.
 
-## Packages And Options
+## \>Packages And Options
 
   - Load packages.
 
@@ -74,7 +74,7 @@ options(width = 999)
 knitr::opts_chunk$set(dpi = 300, out.width = "50%", eval = FALSE)
 ```
 
-## Bidding Data From `nusmods`
+## \>\>Bidding Data From `nusmods`
 
   - Extract data from `nusmods` API at <https://nusmods.com/api/>.
   - CORS bidding data.
@@ -106,13 +106,13 @@ after - before
 saveRDS(myBid, file = "myBid.RDS")
 ```
 
-## Load `myBid.RDS`
+## \>\>Load `myBid.RDS`
 
 ``` r
 myBid <- readRDS("mydata.RDS")
 ```
 
-## Module Information
+## \>Module Information
 
 ``` r
 # create empty dataframe which will act as a container to be populated with data
@@ -146,7 +146,7 @@ for(year in c(2011:2018))
 saveRDS(myModInfo, file = "myModInfo.RDS")
 ```
 
-## Load `myModInfo.RDS`
+## \>\>Load `myModInfo.RDS`
 
 ``` r
 myModInfo <- readRDS("myModInfo.RDS")
@@ -154,14 +154,14 @@ myModInfo <- readRDS("myModInfo.RDS")
 
 # Phase 2: Filter, Transform And Merge Data
 
-## `myModInfo`
+## \>`myModInfo`
 
   - Filter Module Information, `myModInfo`.
       - Removing non-Psychology modules.
       - Removing tutorial information.
       - Removing duplicated rows.
 
-### Filter
+### \>\>Filter
 
 ``` r
 # only keep the Psychology modules information
@@ -183,14 +183,14 @@ myModInfo <- distinct(myModInfo,
                       ModuleCode, AcadYear, Semester, StartTime, DayText)
 ```
 
-## `myBid`
+## \>`myBid`
 
   - Filter CORS Bidding Information, `myBid`.
       - Removing non-Psychology modules, including Roots and Wings (PLS)
         and Psychology for non-Psychology students (PLB).
       - Removing information from reserved modules.
 
-### Filter
+### \>\>Filter
 
 ``` r
 # remove non-psychology modules
@@ -210,7 +210,7 @@ myBid <- subset(myBid,
 myBid <- myBid[, -grep("Group|Faculty", names(myBid))]
 ```
 
-## Transform And Merge
+## \>\>Transform And Merge
 
   - Transform
       - Created a new variable `Level` that denotes whether the module
@@ -260,7 +260,7 @@ mydata <- merge(x = myBid,
                 by = c("ModuleCode", "AcadYear", "Semester"))
 ```
 
-## Coercing Columns To Factors/Numeric
+## \>Coercing Columns To Factors/Numeric
 
 ``` r
 # transform these columns to numeric
@@ -275,7 +275,7 @@ for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level", "StudentAcctT
 }
 ```
 
-## Vectors Of Column Names
+## \>Vectors Of Column Names
 
 ``` r
 # create vector of the column names which are factors
@@ -288,14 +288,14 @@ numnames <- names(select_if(mydata, is.numeric))
 numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numnames)]
 ```
 
-## Rearranging `DayText` Levels
+## \>Rearranging `DayText` Levels
 
 ``` r
 mydata$DayText <- factor(mydata$DayText,
                          levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"))
 ```
 
-## Rearranging `LessonTime` Levels
+## \>Rearranging `LessonTime` Levels
 
 ``` r
 mydata$LessonTime <- factor(mydata$LessonTime,
