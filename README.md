@@ -14,10 +14,6 @@ Aaron0696
 
   - Load packages.
 
-<details>
-
-<summary><b>View Code</b></summary>
-
 ## \>Packages And Options
 
 ``` r
@@ -35,16 +31,8 @@ library(dplyr)
 options(width = 999)
 ```
 
-</details>
-
-<br>
-
   - Extract data from `nusmods` API at <https://nusmods.com/api/>.
   - CORS bidding data.
-
-<details>
-
-<summary><b>View Code</b></summary>
 
 ## \>\>Bidding Data From `nusmods`
 
@@ -85,15 +73,7 @@ saveRDS(mydata, file = "mydata.RDS")
 mydata <- readRDS("mydata.RDS")
 ```
 
-</details>
-
-<br>
-
   - Module information data.
-
-<details>
-
-<summary><b>View Code</b></summary>
 
 ## \>Module Information
 
@@ -121,18 +101,12 @@ saveRDS(myModInfo, file = "myModInfo.RDS")
 myModInfo <- readRDS("myModInfo.RDS")
 ```
 
-</details>
-
 # Phase 2: Filter, Transform And Merge Data
 
   - Filter Module Information, `myModInfo`.
       - Removing non-Psychology modules.
       - Removing tutorial information.
       - Removing duplicated rows.
-
-<details>
-
-<summary><b>View Code</b></summary>
 
 ## \>`myModInfo`
 
@@ -158,18 +132,10 @@ myModInfo <- distinct(myModInfo,
                       ModuleCode, AcadYear, Semester, StartTime, DayText)
 ```
 
-</details>
-
-<br>
-
   - Filter CORS Bidding Information, `mydata`.
       - Removing non-Psychology modules, including Roots and Wings (PLS)
         and Psychology for non-Psychology students (PLB).
       - Removing information from reserved modules.
-
-<details>
-
-<summary><b>View Code</b></summary>
 
 ## \>`mydata`
 
@@ -196,10 +162,6 @@ mydata <- subset(mydata,
 mydata <- mydata[, -grep("Group|Faculty", names(mydata))]
 ```
 
-</details>
-
-<br>
-
   - Transform
       - Created a new variable `Level` that denotes whether the module
         is Level 1, 2, 3 or 4.
@@ -213,10 +175,6 @@ mydata <- mydata[, -grep("Group|Faculty", names(mydata))]
         (12pm to 4pm), in the evening (after 4pm).
   - Merge
       - Add the information from `myModInfo` to `mydata`.
-
-<details>
-
-<summary><b>View Code</b></summary>
 
 ## \>\>Transform And Merge
 
@@ -252,14 +210,6 @@ mydata <- merge(x = mydata,
                  all.y = FALSE)
 ```
 
-</details>
-
-<br>
-
-<details>
-
-<summary><b>Additional Codes</b></summary>
-
 ## \>Coercing Columns To Factors/Numeric
 
 ``` r
@@ -294,8 +244,6 @@ numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numname
 mydata$DayText <- factor(mydata$DayText,
                          levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"))
 ```
-
-</details>
 
 # Phase 3: Data Diagnostics
 
@@ -356,10 +304,6 @@ summary(mydata)
 
 ## Univariate Histograms
 
-<details>
-
-<summary>View Histograms</summary>
-
 ``` r
 # plot the categorical variables
 # note: I did not include ModuleCode in this exploratory graph because it has too many levels (83)
@@ -397,8 +341,6 @@ for(r in numnames)
 }
 ```
 
-</details>
-
 ## Bivariate Plots
 
 ### Categorical-Categorical
@@ -434,10 +376,6 @@ for(r in 1:length(facnames.mod))
   }
 }
 ```
-
-<details>
-
-<summary>View Continuous-Continuous Bivariate Plots</summary>
 
 ### Continuous-Continuous
 
@@ -477,12 +415,6 @@ for(r in 1:length(numnames))
 }
 ```
 
-</details>
-
-<details>
-
-<summary>View Correlation Matrix</summary>
-
 ### Correlation Matrix
 
 ``` r
@@ -494,10 +426,6 @@ corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(myd
 ```
 
 ![](README_files/figure-gfm/corrmatrix-1.png)<!-- -->
-
-<details>
-
-<summary>View Continuous-Categorical Bivariate Plots</summary>
 
 ### Continuous-Categorical
 
@@ -519,12 +447,6 @@ for(r in facnames.mod)
 }
 ```
 
-</details>
-
-<details>
-
-<summary>View Continuous-Module Bivariate Plots</summary>
-
 ### By Module
 
 ``` r
@@ -542,8 +464,6 @@ for(i in numnames)
   )
 }
 ```
-
-</details>
 
 # Is It Easier To Bid For Modules With Extremely Early/Late Lectures?
 

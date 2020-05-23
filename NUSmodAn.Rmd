@@ -22,9 +22,6 @@ output:
 
 * Load packages.
 
-<details>
-  <summary><b>View Code</b></summary>
-
 ## >Packages And Options
 
 ```{r setup, warning = FALSE, message = FALSE}
@@ -42,14 +39,8 @@ library(dplyr)
 options(width = 999)
 ```
 
-</details>
-<br>
-
 * Extract data from `nusmods` API at https://nusmods.com/api/.
 * CORS bidding data.
-
-<details>
-  <summary><b>View Code</b></summary>
 
 ## >>Bidding Data From `nusmods`
 
@@ -90,13 +81,7 @@ saveRDS(mydata, file = "mydata.RDS")
 mydata <- readRDS("mydata.RDS")
 ```    
 
-</details>
-<br>
-
 * Module information data.
-
-<details>
-  <summary><b>View Code</b></summary>
 
 ## >Module Information
 
@@ -124,17 +109,12 @@ saveRDS(myModInfo, file = "myModInfo.RDS")
 myModInfo <- readRDS("myModInfo.RDS")
 ```
 
-</details>
-
 # Phase 2: Filter, Transform And Merge Data
 
 * Filter Module Information, `myModInfo`.
     * Removing non-Psychology modules.
     * Removing tutorial information.
     * Removing duplicated rows.
-
-<details>
-  <summary><b>View Code</b></summary>
     
 ## >`myModInfo`
 
@@ -160,15 +140,9 @@ myModInfo <- distinct(myModInfo,
                       ModuleCode, AcadYear, Semester, StartTime, DayText)
 ```  
     
-</details>
-<br>
-    
 * Filter CORS Bidding Information, `mydata`.
     * Removing non-Psychology modules, including Roots and Wings (PLS) and Psychology for non-Psychology students (PLB).
     * Removing information from reserved modules.
-    
-<details>
-  <summary><b>View Code</b></summary>
     
 ## >`mydata`
 
@@ -195,18 +169,12 @@ mydata <- subset(mydata,
 mydata <- mydata[, -grep("Group|Faculty", names(mydata))]
 ```
     
-</details>
-<br>
-    
 * Transform
     * Created a new variable `Level` that denotes whether the module is Level 1, 2, 3 or 4.
     * Created a new variable `BpQ` that represents Bids per Quota, which is the number of bidders for each available quota of the module, derived from `Bidders` and `Quota`. Used as a measure of the popularity of a module, Higher `BpQ` signifies greater popularity.
     * Created a new variable `LessonTime` that denotes whether the lecture begins in the morning (before 12pm), in the afternoon (12pm to 4pm), in the evening (after 4pm).
 * Merge
     * Add the information from `myModInfo` to `mydata`.
-
-<details>
-  <summary><b>View Code</b></summary>
 
 ## >>Transform And Merge
 
@@ -241,12 +209,6 @@ mydata <- merge(x = mydata,
                  all.x = TRUE,
                  all.y = FALSE)
 ```
-
-</details>
-<br>
-
-<details>
-  <summary><b>Additional Codes</b></summary>
 
 ## >Coercing Columns To Factors/Numeric
 
@@ -283,19 +245,16 @@ mydata$DayText <- factor(mydata$DayText,
                          levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"))
 ```
 
-</details>
-
 # Phase 3: Data Diagnostics
 
 * Plot univariate histograms and bivariate plots using loops for **almost every** combination of variables.
 * The graphs from this section are predominantly for diagnostics rather than exploration, what I mean is that the graphs from this section would make little sense if one tried to draw insights from them. This is because they are aggregated across all other variables.
     * For example: The mean of `Bidders` is calculated across all academic years, all bidding rounds, all modules...
 * What I am looking out for in this section are odd patterns, like zeroes in places where they shouldn't be, missing data, highly non-normal data, variables with outliers, etc...
-
+* Some observations and thoughts
+    * The bidding statistics are highly non-normal, likely due to being bounded by zero (they cannot bid negative points or have negative bidders). May consider using zero-inflated or poisson regression if considering these statistics as dependent variables.
+    
 ## Univariate Descriptive Statistics
-
-<details>
-  <summary>View Descriptive Statistics</summary>
 
 ```{r unides}
 describe(mydata)
@@ -305,12 +264,7 @@ describe(mydata)
 summary(mydata)
 ```
 
-</details>
-
 ## Univariate Histograms
-
-<details>
-  <summary>View Histograms</summary>
 
 ```{r explore1, warning = FALSE, eval = FALSE, dpi = 150}
 # plot the categorical variables
@@ -349,12 +303,7 @@ for(r in numnames)
 }
 ```
 
-</details>
-
 ## Bivariate Plots
-
-<details>
-  <summary>View Categorical-Categorical Bivariate Plots</summary>
 
 ### Categorical-Categorical
 
@@ -389,11 +338,6 @@ for(r in 1:length(facnames.mod))
   }
 }
 ```
-
-</details>
-
-<details>
-  <summary>View Continuous-Continuous Bivariate Plots</summary>
 
 ### Continuous-Continuous
 
@@ -435,12 +379,6 @@ for(r in 1:length(numnames))
 
 ```
 
-</details>
-
-<details>
-  <summary>View Correlation Matrix</summary>
-
-
 ### Correlation Matrix
 
 ```{r corrmatrix, fig.width = 4, fig.height = 4, dpi = 150}
@@ -450,10 +388,6 @@ corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(myd
                tl.cex = 0.5,
                cl.cex = 0.5)
 ```
-
-
-<details>
-  <summary>View Continuous-Categorical Bivariate Plots</summary>
 
 ### Continuous-Categorical
 
@@ -475,11 +409,6 @@ for(r in facnames.mod)
 }
 ```
 
-</details>
-
-<details>
-  <summary>View Continuous-Module Bivariate Plots</summary>
-
 ### By Module
 
 ```{r exploremodule, fig.height = 12, warning = FALSE, eval = FALSE, dpi = 150}
@@ -497,8 +426,6 @@ for(i in numnames)
   )
 }
 ```
-
-</details>
 
 # Is It Easier To Bid For Modules With Extremely Early/Late Lectures?
 
