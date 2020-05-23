@@ -401,10 +401,6 @@ for(r in numnames)
 
 ## Bivariate Plots
 
-<details>
-
-<summary>View Categorical-Categorical Bivariate Plots</summary>
-
 ### Categorical-Categorical
 
 ``` r
@@ -438,8 +434,6 @@ for(r in 1:length(facnames.mod))
   }
 }
 ```
-
-</details>
 
 <details>
 
