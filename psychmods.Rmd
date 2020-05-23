@@ -17,6 +17,17 @@ output:
     toc_float: yes
     df_print: paged
 ---
+```{r rendering, eval = FALSE, include = FALSE}
+# for github
+rmarkdown::render(input = "psychmods.Rmd",
+                  output_format = "github_document",
+                  output_file = "README.md")
+# for html
+rmarkdown::render(input = "psychmods.Rmd",
+                  output_format = "html_document",
+                  output_file = "psychmods.html")
+```
+
 
 * Notes:
     1. AY2017/2018 Semester 2, AY2018/2019 Semester 2, bidding data not available.
@@ -33,9 +44,6 @@ output:
 * Load packages.
 
 ```{r setup, warning = FALSE, message = FALSE}
-# rmarkdown::render(input = "NUSmodAn.Rmd",
-#                   output_format = "github_document",
-#                   output_file = "README.md")
 library(semTools)
 library(ggplot2)
 library(rjson)
