@@ -55,6 +55,8 @@ library(psych)
 library(corrplot)
 library(dplyr)
 options(width = 999)
+knitr::opts_chunk$set(dpi = 300)
+knitr::opts_chunk$set(out.width = "50%")
 ```
 
 ## \>\>Bidding Data From `nusmods`
@@ -357,27 +359,27 @@ for(r in facnames.mod)
 
     ## Histogram Of AcadYear
 
-![](README_files/figure-gfm/explore1-1.png)<!-- -->
+<img src="README_files/figure-gfm/explore1-1.png" width="50%" />
 
     ## Histogram Of Semester
 
-![](README_files/figure-gfm/explore1-2.png)<!-- -->
+<img src="README_files/figure-gfm/explore1-2.png" width="50%" />
 
     ## Histogram Of Round
 
-![](README_files/figure-gfm/explore1-3.png)<!-- -->
+<img src="README_files/figure-gfm/explore1-3.png" width="50%" />
 
     ## Histogram Of Level
 
-![](README_files/figure-gfm/explore1-4.png)<!-- -->
+<img src="README_files/figure-gfm/explore1-4.png" width="50%" />
 
     ## Histogram Of DayText
 
-![](README_files/figure-gfm/explore1-5.png)<!-- -->
+<img src="README_files/figure-gfm/explore1-5.png" width="50%" />
 
     ## Histogram Of LessonTime
 
-![](README_files/figure-gfm/explore1-6.png)<!-- -->
+<img src="README_files/figure-gfm/explore1-6.png" width="50%" />
 
 ``` r
 # plot the continuous variables
@@ -399,31 +401,31 @@ for(r in numnames)
 
     ## Histogram Of Quota
 
-![](README_files/figure-gfm/explore2-1.png)<!-- -->
+<img src="README_files/figure-gfm/explore2-1.png" width="50%" />
 
     ## Histogram Of Bidders
 
-![](README_files/figure-gfm/explore2-2.png)<!-- -->
+<img src="README_files/figure-gfm/explore2-2.png" width="50%" />
 
     ## Histogram Of LowestBid
 
-![](README_files/figure-gfm/explore2-3.png)<!-- -->
+<img src="README_files/figure-gfm/explore2-3.png" width="50%" />
 
     ## Histogram Of LowestSuccessfulBid
 
-![](README_files/figure-gfm/explore2-4.png)<!-- -->
+<img src="README_files/figure-gfm/explore2-4.png" width="50%" />
 
     ## Histogram Of HighestBid
 
-![](README_files/figure-gfm/explore2-5.png)<!-- -->
+<img src="README_files/figure-gfm/explore2-5.png" width="50%" />
 
     ## Histogram Of BpQ
 
-![](README_files/figure-gfm/explore2-6.png)<!-- -->
+<img src="README_files/figure-gfm/explore2-6.png" width="50%" />
 
     ## Histogram Of StartTime
 
-![](README_files/figure-gfm/explore2-7.png)<!-- -->
+<img src="README_files/figure-gfm/explore2-7.png" width="50%" />
 
 ## Bivariate Plots
 
@@ -463,63 +465,63 @@ for(r in 1:length(facnames.mod))
 
     ## AcadYear ~ Semester
 
-![](README_files/figure-gfm/explorecatcat-1.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-1.png" width="50%" />
 
     ## AcadYear ~ Round
 
-![](README_files/figure-gfm/explorecatcat-2.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-2.png" width="50%" />
 
     ## AcadYear ~ Level
 
-![](README_files/figure-gfm/explorecatcat-3.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-3.png" width="50%" />
 
     ## AcadYear ~ DayText
 
-![](README_files/figure-gfm/explorecatcat-4.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-4.png" width="50%" />
 
     ## AcadYear ~ LessonTime
 
-![](README_files/figure-gfm/explorecatcat-5.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-5.png" width="50%" />
 
     ## Semester ~ Round
 
-![](README_files/figure-gfm/explorecatcat-6.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-6.png" width="50%" />
 
     ## Semester ~ Level
 
-![](README_files/figure-gfm/explorecatcat-7.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-7.png" width="50%" />
 
     ## Semester ~ DayText
 
-![](README_files/figure-gfm/explorecatcat-8.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-8.png" width="50%" />
 
     ## Semester ~ LessonTime
 
-![](README_files/figure-gfm/explorecatcat-9.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-9.png" width="50%" />
 
     ## Round ~ Level
 
-![](README_files/figure-gfm/explorecatcat-10.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-10.png" width="50%" />
 
     ## Round ~ DayText
 
-![](README_files/figure-gfm/explorecatcat-11.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-11.png" width="50%" />
 
     ## Round ~ LessonTime
 
-![](README_files/figure-gfm/explorecatcat-12.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-12.png" width="50%" />
 
     ## Level ~ DayText
 
-![](README_files/figure-gfm/explorecatcat-13.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-13.png" width="50%" />
 
     ## Level ~ LessonTime
 
-![](README_files/figure-gfm/explorecatcat-14.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-14.png" width="50%" />
 
     ## DayText ~ LessonTime
 
-![](README_files/figure-gfm/explorecatcat-15.png)<!-- -->
+<img src="README_files/figure-gfm/explorecatcat-15.png" width="50%" />
 
 ### Continuous-Continuous
 
@@ -561,87 +563,87 @@ for(r in 1:length(numnames))
 
     ## Quota ~ Bidders
 
-![](README_files/figure-gfm/exploreconcon-1.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-1.png" width="50%" />
 
     ## Quota ~ LowestBid
 
-![](README_files/figure-gfm/exploreconcon-2.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-2.png" width="50%" />
 
     ## Quota ~ LowestSuccessfulBid
 
-![](README_files/figure-gfm/exploreconcon-3.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-3.png" width="50%" />
 
     ## Quota ~ HighestBid
 
-![](README_files/figure-gfm/exploreconcon-4.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-4.png" width="50%" />
 
     ## Quota ~ BpQ
 
-![](README_files/figure-gfm/exploreconcon-5.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-5.png" width="50%" />
 
     ## Quota ~ StartTime
 
-![](README_files/figure-gfm/exploreconcon-6.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-6.png" width="50%" />
 
     ## Bidders ~ LowestBid
 
-![](README_files/figure-gfm/exploreconcon-7.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-7.png" width="50%" />
 
     ## Bidders ~ LowestSuccessfulBid
 
-![](README_files/figure-gfm/exploreconcon-8.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-8.png" width="50%" />
 
     ## Bidders ~ HighestBid
 
-![](README_files/figure-gfm/exploreconcon-9.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-9.png" width="50%" />
 
     ## Bidders ~ BpQ
 
-![](README_files/figure-gfm/exploreconcon-10.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-10.png" width="50%" />
 
     ## Bidders ~ StartTime
 
-![](README_files/figure-gfm/exploreconcon-11.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-11.png" width="50%" />
 
     ## LowestBid ~ LowestSuccessfulBid
 
-![](README_files/figure-gfm/exploreconcon-12.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-12.png" width="50%" />
 
     ## LowestBid ~ HighestBid
 
-![](README_files/figure-gfm/exploreconcon-13.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-13.png" width="50%" />
 
     ## LowestBid ~ BpQ
 
-![](README_files/figure-gfm/exploreconcon-14.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-14.png" width="50%" />
 
     ## LowestBid ~ StartTime
 
-![](README_files/figure-gfm/exploreconcon-15.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-15.png" width="50%" />
 
     ## LowestSuccessfulBid ~ HighestBid
 
-![](README_files/figure-gfm/exploreconcon-16.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-16.png" width="50%" />
 
     ## LowestSuccessfulBid ~ BpQ
 
-![](README_files/figure-gfm/exploreconcon-17.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-17.png" width="50%" />
 
     ## LowestSuccessfulBid ~ StartTime
 
-![](README_files/figure-gfm/exploreconcon-18.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-18.png" width="50%" />
 
     ## HighestBid ~ BpQ
 
-![](README_files/figure-gfm/exploreconcon-19.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-19.png" width="50%" />
 
     ## HighestBid ~ StartTime
 
-![](README_files/figure-gfm/exploreconcon-20.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-20.png" width="50%" />
 
     ## BpQ ~ StartTime
 
-![](README_files/figure-gfm/exploreconcon-21.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcon-21.png" width="50%" />
 
 ### Correlation Matrix
 
@@ -653,7 +655,7 @@ corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(myd
                cl.cex = 0.5)
 ```
 
-![](README_files/figure-gfm/corrmatrix-1.png)<!-- -->
+<img src="README_files/figure-gfm/corrmatrix-1.png" width="50%" />
 
 ### Continuous-Categorical
 
@@ -677,171 +679,171 @@ for(r in facnames.mod)
 
     ## AcadYear ~ Quota
 
-![](README_files/figure-gfm/exploreconcat-1.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-1.png" width="50%" />
 
     ## AcadYear ~ Bidders
 
-![](README_files/figure-gfm/exploreconcat-2.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-2.png" width="50%" />
 
     ## AcadYear ~ LowestBid
 
-![](README_files/figure-gfm/exploreconcat-3.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-3.png" width="50%" />
 
     ## AcadYear ~ LowestSuccessfulBid
 
-![](README_files/figure-gfm/exploreconcat-4.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-4.png" width="50%" />
 
     ## AcadYear ~ HighestBid
 
-![](README_files/figure-gfm/exploreconcat-5.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-5.png" width="50%" />
 
     ## AcadYear ~ BpQ
 
-![](README_files/figure-gfm/exploreconcat-6.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-6.png" width="50%" />
 
     ## AcadYear ~ StartTime
 
-![](README_files/figure-gfm/exploreconcat-7.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-7.png" width="50%" />
 
     ## Semester ~ Quota
 
-![](README_files/figure-gfm/exploreconcat-8.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-8.png" width="50%" />
 
     ## Semester ~ Bidders
 
-![](README_files/figure-gfm/exploreconcat-9.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-9.png" width="50%" />
 
     ## Semester ~ LowestBid
 
-![](README_files/figure-gfm/exploreconcat-10.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-10.png" width="50%" />
 
     ## Semester ~ LowestSuccessfulBid
 
-![](README_files/figure-gfm/exploreconcat-11.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-11.png" width="50%" />
 
     ## Semester ~ HighestBid
 
-![](README_files/figure-gfm/exploreconcat-12.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-12.png" width="50%" />
 
     ## Semester ~ BpQ
 
-![](README_files/figure-gfm/exploreconcat-13.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-13.png" width="50%" />
 
     ## Semester ~ StartTime
 
-![](README_files/figure-gfm/exploreconcat-14.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-14.png" width="50%" />
 
     ## Round ~ Quota
 
-![](README_files/figure-gfm/exploreconcat-15.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-15.png" width="50%" />
 
     ## Round ~ Bidders
 
-![](README_files/figure-gfm/exploreconcat-16.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-16.png" width="50%" />
 
     ## Round ~ LowestBid
 
-![](README_files/figure-gfm/exploreconcat-17.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-17.png" width="50%" />
 
     ## Round ~ LowestSuccessfulBid
 
-![](README_files/figure-gfm/exploreconcat-18.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-18.png" width="50%" />
 
     ## Round ~ HighestBid
 
-![](README_files/figure-gfm/exploreconcat-19.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-19.png" width="50%" />
 
     ## Round ~ BpQ
 
-![](README_files/figure-gfm/exploreconcat-20.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-20.png" width="50%" />
 
     ## Round ~ StartTime
 
-![](README_files/figure-gfm/exploreconcat-21.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-21.png" width="50%" />
 
     ## Level ~ Quota
 
-![](README_files/figure-gfm/exploreconcat-22.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-22.png" width="50%" />
 
     ## Level ~ Bidders
 
-![](README_files/figure-gfm/exploreconcat-23.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-23.png" width="50%" />
 
     ## Level ~ LowestBid
 
-![](README_files/figure-gfm/exploreconcat-24.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-24.png" width="50%" />
 
     ## Level ~ LowestSuccessfulBid
 
-![](README_files/figure-gfm/exploreconcat-25.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-25.png" width="50%" />
 
     ## Level ~ HighestBid
 
-![](README_files/figure-gfm/exploreconcat-26.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-26.png" width="50%" />
 
     ## Level ~ BpQ
 
-![](README_files/figure-gfm/exploreconcat-27.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-27.png" width="50%" />
 
     ## Level ~ StartTime
 
-![](README_files/figure-gfm/exploreconcat-28.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-28.png" width="50%" />
 
     ## DayText ~ Quota
 
-![](README_files/figure-gfm/exploreconcat-29.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-29.png" width="50%" />
 
     ## DayText ~ Bidders
 
-![](README_files/figure-gfm/exploreconcat-30.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-30.png" width="50%" />
 
     ## DayText ~ LowestBid
 
-![](README_files/figure-gfm/exploreconcat-31.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-31.png" width="50%" />
 
     ## DayText ~ LowestSuccessfulBid
 
-![](README_files/figure-gfm/exploreconcat-32.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-32.png" width="50%" />
 
     ## DayText ~ HighestBid
 
-![](README_files/figure-gfm/exploreconcat-33.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-33.png" width="50%" />
 
     ## DayText ~ BpQ
 
-![](README_files/figure-gfm/exploreconcat-34.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-34.png" width="50%" />
 
     ## DayText ~ StartTime
 
-![](README_files/figure-gfm/exploreconcat-35.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-35.png" width="50%" />
 
     ## LessonTime ~ Quota
 
-![](README_files/figure-gfm/exploreconcat-36.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-36.png" width="50%" />
 
     ## LessonTime ~ Bidders
 
-![](README_files/figure-gfm/exploreconcat-37.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-37.png" width="50%" />
 
     ## LessonTime ~ LowestBid
 
-![](README_files/figure-gfm/exploreconcat-38.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-38.png" width="50%" />
 
     ## LessonTime ~ LowestSuccessfulBid
 
-![](README_files/figure-gfm/exploreconcat-39.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-39.png" width="50%" />
 
     ## LessonTime ~ HighestBid
 
-![](README_files/figure-gfm/exploreconcat-40.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-40.png" width="50%" />
 
     ## LessonTime ~ BpQ
 
-![](README_files/figure-gfm/exploreconcat-41.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-41.png" width="50%" />
 
     ## LessonTime ~ StartTime
 
-![](README_files/figure-gfm/exploreconcat-42.png)<!-- -->
+<img src="README_files/figure-gfm/exploreconcat-42.png" width="50%" />
 
 ### By Module
 
@@ -863,31 +865,31 @@ for(i in numnames)
 
     ## ModuleCode ~ Quota
 
-![](README_files/figure-gfm/exploremodule-1.png)<!-- -->
+<img src="README_files/figure-gfm/exploremodule-1.png" width="50%" />
 
     ## ModuleCode ~ Bidders
 
-![](README_files/figure-gfm/exploremodule-2.png)<!-- -->
+<img src="README_files/figure-gfm/exploremodule-2.png" width="50%" />
 
     ## ModuleCode ~ LowestBid
 
-![](README_files/figure-gfm/exploremodule-3.png)<!-- -->
+<img src="README_files/figure-gfm/exploremodule-3.png" width="50%" />
 
     ## ModuleCode ~ LowestSuccessfulBid
 
-![](README_files/figure-gfm/exploremodule-4.png)<!-- -->
+<img src="README_files/figure-gfm/exploremodule-4.png" width="50%" />
 
     ## ModuleCode ~ HighestBid
 
-![](README_files/figure-gfm/exploremodule-5.png)<!-- -->
+<img src="README_files/figure-gfm/exploremodule-5.png" width="50%" />
 
     ## ModuleCode ~ BpQ
 
-![](README_files/figure-gfm/exploremodule-6.png)<!-- -->
+<img src="README_files/figure-gfm/exploremodule-6.png" width="50%" />
 
     ## ModuleCode ~ StartTime
 
-![](README_files/figure-gfm/exploremodule-7.png)<!-- -->
+<img src="README_files/figure-gfm/exploremodule-7.png" width="50%" />
 
 # Phase 5: Exploration
 
