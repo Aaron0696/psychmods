@@ -4,17 +4,43 @@ Aaron0696
 
   - [Phase 1: Setting Up Environment, Packages And Loading
     Data.](#phase-1-setting-up-environment-packages-and-loading-data.)
+      - [\>Packages And Options](#packages-and-options)
+      - [\>\>Bidding Data From `nusmods`](#bidding-data-from-nusmods)
+      - [\>\>Load `myBid.RDS`](#load-mybid.rds)
+      - [\>Module Information](#module-information)
+      - [\>\>Load `myModInfo.RDS`](#load-mymodinfo.rds)
   - [Phase 2: Filter, Transform And Merge
     Data](#phase-2-filter-transform-and-merge-data)
+      - [\>`myModInfo`](#mymodinfo)
+          - [\>\>Filter](#filter)
+      - [\>`myBid`](#mybid)
+          - [\>\>Filter](#filter-1)
+      - [\>\>Transform And Merge](#transform-and-merge)
+      - [\>Coercing Columns To
+        Factors/Numeric](#coercing-columns-to-factorsnumeric)
+      - [\>Vectors Of Column Names](#vectors-of-column-names)
+      - [\>Rearranging `DayText` Levels](#rearranging-daytext-levels)
+      - [\>Rearranging `LessonTime`
+        Levels](#rearranging-lessontime-levels)
   - [Phase 3: Data Diagnostics](#phase-3-data-diagnostics)
-  - [Is It Easier To Bid For Modules With Extremely Early/Late
-    Lectures?](#is-it-easier-to-bid-for-modules-with-extremely-earlylate-lectures)
+      - [Univariate Descriptive
+        Statistics](#univariate-descriptive-statistics)
+      - [Univariate Histograms](#univariate-histograms)
+      - [Bivariate Plots](#bivariate-plots)
+          - [Categorical-Categorical](#categorical-categorical)
+          - [Continuous-Continuous](#continuous-continuous)
+          - [Correlation Matrix](#correlation-matrix)
+          - [Continuous-Categorical](#continuous-categorical)
+          - [By Module](#by-module)
+  - [Phase 5: Exploration](#phase-5-exploration)
 
 # Phase 1: Setting Up Environment, Packages And Loading Data.
 
+## \>Packages And Options
+
   - Load packages.
 
-## \>Packages And Options
+<!-- end list -->
 
 ``` r
 # rmarkdown::render(input = "NUSmodAn.Rmd",
@@ -31,10 +57,12 @@ library(dplyr)
 options(width = 999)
 ```
 
+## \>\>Bidding Data From `nusmods`
+
   - Extract data from `nusmods` API at <https://nusmods.com/api/>.
   - CORS bidding data.
 
-## \>\>Bidding Data From `nusmods`
+<!-- end list -->
 
 ``` r
 # load bidding data
@@ -43,13 +71,13 @@ before <- Sys.time()
 # read data directly from URL
 myjson <- fromJSON(file = url("https://api.nusmods.com/corsBiddingStatsRaw.json"))
 # create empty dataframe which will act as a container to be populated with data
-mydata <- data.frame()
-# for each element in the myjson list, append it to mydata
+myBid <- data.frame()
+# for each element in the myjson list, append it to myBid
 for(r in 1:length(myjson))
 {
   if(myjson[[r]]$Semester == 1 | myjson[[r]]$Semester == 2)
   {
-    mydata <- rbind(mydata, myjson[[r]])
+    myBid <- rbind(myBid, myjson[[r]])
   }
   myjson[[r]] <- NA
 }
@@ -59,21 +87,19 @@ after - before
 # remove myjson to free up some RAM
 rm(myjson)
 # peek at the data
-head(mydata)
-tail(mydata)
+head(myBid)
+tail(myBid)
 # data struct
-str(mydata)
+str(myBid)
 # save
-saveRDS(mydata, file = "mydata.RDS")
+saveRDS(myBid, file = "myBid.RDS")
 ```
 
-## \>\>Load `mydata.RDS`
+## \>\>Load `myBid.RDS`
 
 ``` r
-mydata <- readRDS("mydata.RDS")
+myBid <- readRDS("mydata.RDS")
 ```
-
-  - Module information data.
 
 ## \>Module Information
 
@@ -81,7 +107,7 @@ mydata <- readRDS("mydata.RDS")
 myjson <- fromJSON(file = url("https://nusmods.com/api/moduleTimetableDeltaRaw.json"))
 # create empty dataframe which will act as a container to be populated with data
 myModInfo <- data.frame()
-# for each element in the myjson list, append it to mydata
+# for each element in the myjson list, append it to myBid
 for(r in 1:length(myjson))
 {
   if(myjson[[r]]$Semester == 1 | myjson[[r]]$Semester == 2)
@@ -103,12 +129,12 @@ myModInfo <- readRDS("myModInfo.RDS")
 
 # Phase 2: Filter, Transform And Merge Data
 
+## \>`myModInfo`
+
   - Filter Module Information, `myModInfo`.
       - Removing non-Psychology modules.
       - Removing tutorial information.
       - Removing duplicated rows.
-
-## \>`myModInfo`
 
 ### \>\>Filter
 
@@ -132,35 +158,34 @@ myModInfo <- distinct(myModInfo,
                       ModuleCode, AcadYear, Semester, StartTime, DayText)
 ```
 
-  - Filter CORS Bidding Information, `mydata`.
+## \>`myBid`
+
+  - Filter CORS Bidding Information, `myBid`.
       - Removing non-Psychology modules, including Roots and Wings (PLS)
         and Psychology for non-Psychology students (PLB).
       - Removing information from reserved modules.
-
-## \>`mydata`
 
 ### \>\>Filter
 
 ``` r
 # remove non-psychology modules
-mydata <- subset(mydata,
+myBid <- subset(myBid,
                  # only keep rows where module code begins with PL
-                 str_detect(mydata$ModuleCode, "^PL"))
-# remove core psychology modules, they are PL323[2 to 6], PL1101E, PL2131, PL2132.
+                 str_detect(myBid$ModuleCode, "^PL"))
+
 # also remove Roots and Wings (PLS8001) and psychology for non-psych students (PLB1201)
-mydata <- subset(mydata,
-                 !str_detect(mydata$ModuleCode, "PLS|PLB"))
+myBid <- subset(myBid,
+                 !str_detect(myBid$ModuleCode, "PLS|PLB"))
 
 # remove the rounds where it was reserved
-mydata <- subset(mydata,
-                     !str_detect(mydata$StudentAcctType, "Reserved"))
-# remove modules that can only be pre-allocated such as PL3231, PL3551, PL6...
-#TODO
-
+myBid <- subset(myBid,
+                     !str_detect(myBid$StudentAcctType, "Reserved"))
 
 # remove unneeded columns
-mydata <- mydata[, -grep("Group|Faculty", names(mydata))]
+myBid <- myBid[, -grep("Group|Faculty", names(myBid))]
 ```
+
+## \>\>Transform And Merge
 
   - Transform
       - Created a new variable `Level` that denotes whether the module
@@ -174,25 +199,25 @@ mydata <- mydata[, -grep("Group|Faculty", names(mydata))]
         lecture begins in the morning (before 12pm), in the afternoon
         (12pm to 4pm), in the evening (after 4pm).
   - Merge
-      - Add the information from `myModInfo` to `mydata`.
+      - Add the information from `myModInfo` to `myBid`.
 
-## \>\>Transform And Merge
+<!-- end list -->
 
 ``` r
 # create new column that indicates the level of the module, based on their module code
-mydata$Level <- ifelse(str_detect(mydata$ModuleCode, "1[0-9][0-9][0-9]"), "Level 1",
-                       ifelse(str_detect(mydata$ModuleCode, "2[0-9][0-9][0-9]"), "Level 2",
-                              ifelse(str_detect(mydata$ModuleCode, "3[0-9][0-9][0-9]"), "Level 3",
-                                     ifelse(str_detect(mydata$ModuleCode, "4[0-9][0-9][0-9]"), "Level 4", 
+myBid$Level <- ifelse(str_detect(myBid$ModuleCode, "1[0-9][0-9][0-9]"), "Level 1",
+                       ifelse(str_detect(myBid$ModuleCode, "2[0-9][0-9][0-9]"), "Level 2",
+                              ifelse(str_detect(myBid$ModuleCode, "3[0-9][0-9][0-9]"), "Level 3",
+                                     ifelse(str_detect(myBid$ModuleCode, "4[0-9][0-9][0-9]"), "Level 4", 
                                             "Graduate Module"))))
 # crosstabs to doublecheck
 # xtabs( ~ ModuleCode + Level, 
-#        data = mydata, subset = NULL)
+#        data = myBid, subset = NULL)
 ```
 
 ``` r
 # create new column Bids Per Quota (BpQ)
-mydata$BpQ <- as.numeric(mydata$Bidders)/as.numeric(mydata$Quota)
+myBid$BpQ <- as.numeric(myBid$Bidders)/as.numeric(myBid$Quota)
 ```
 
 ``` r
@@ -203,11 +228,11 @@ myModInfo$LessonTime <- ifelse(as.numeric(myModInfo$StartTime) < 1200, "Morning"
 ```
 
 ``` r
-mydata <- merge(x = mydata, 
+# note: there is only module information from AY2016/17 onwards
+# all data before that period will be dropped
+mydata <- merge(x = myBid, 
                  y = myModInfo,
-                 by = c("ModuleCode", "AcadYear", "Semester"),
-                 all.x = TRUE,
-                 all.y = FALSE)
+                 by = c("ModuleCode", "AcadYear", "Semester"))
 ```
 
 ## \>Coercing Columns To Factors/Numeric
@@ -245,6 +270,13 @@ mydata$DayText <- factor(mydata$DayText,
                          levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"))
 ```
 
+## \>Rearranging `LessonTime` Levels
+
+``` r
+mydata$LessonTime <- factor(mydata$LessonTime,
+                         levels = c("Morning", "Afternoon", "Evening"))
+```
+
 # Phase 3: Data Diagnostics
 
   - Plot univariate histograms and bivariate plots using loops for
@@ -272,35 +304,35 @@ mydata$DayText <- factor(mydata$DayText,
 describe(mydata)
 ```
 
-    ##                     vars    n    mean     sd median trimmed    mad min  max range  skew kurtosis    se
-    ## ModuleCode*            1 2878   29.62  26.81   20.0   26.72  25.20   1   91    90  0.67    -0.86  0.50
-    ## AcadYear*              2 2878    4.07   2.17    4.0    3.98   2.97   1    8     7  0.20    -1.02  0.04
-    ## Semester*              3 2878    1.45   0.50    1.0    1.44   0.00   1    2     1  0.21    -1.96  0.01
-    ## Round*                 4 2878    3.70   2.04    4.0    3.63   2.97   1    7     6  0.07    -1.31  0.04
-    ## Quota                  5 2878   25.09  37.15   14.0   17.81  16.31   1  430   429  4.84    37.01  0.69
-    ## Bidders                6 2878   12.38  29.96    3.0    5.59   4.45   0  491   491  6.07    55.39  0.56
-    ## LowestBid              7 2878   69.39 210.44    1.0   15.32   1.48   0 2430  2430  5.06    33.59  3.92
-    ## LowestSuccessfulBid    8 2878  250.96 512.02    1.0  122.01   1.48   0 3459  3459  2.41     6.07  9.54
-    ## HighestBid             9 2878  718.06 862.57  350.0  578.00 518.91   0 4801  4801  1.18     0.76 16.08
-    ## StudentAcctType*      10 2878    4.36   1.71    5.0    4.45   1.48   1    7     6 -0.51    -0.38  0.03
-    ## Level*                11 2878    3.07   0.82    3.0    3.19   0.00   1    4     3 -1.00     0.93  0.02
-    ## BpQ                   12 2878    1.02   1.77    0.3    0.61   0.44   0   18    18  3.45    15.81  0.03
-    ## StartTime             13  654 1336.39 264.01 1400.0 1341.22 296.52 800 1800  1000 -0.19    -0.71 10.32
-    ## DayText*              14  654    3.00   1.34    3.0    2.99   1.48   1    5     4 -0.05    -1.18  0.05
-    ## LessonTime*           15  654    1.58   0.85    1.0    1.48   0.00   1    3     2  0.91    -0.99  0.03
+    ##                     vars   n    mean     sd  median trimmed     mad min  max range  skew kurtosis    se
+    ## ModuleCode*            1 654   23.37  21.27   14.00   21.66   19.27   1   61    60  0.54    -1.30  0.83
+    ## AcadYear*              2 654    2.06   0.82    2.00    2.08    1.48   1    3     2 -0.11    -1.50  0.03
+    ## Semester*              3 654    1.31   0.46    1.00    1.26    0.00   1    2     1  0.84    -1.29  0.02
+    ## Round*                 4 654    3.55   2.02    3.00    3.45    2.97   1    7     6  0.19    -1.23  0.08
+    ## Quota                  5 654   25.30  34.57   12.00   17.46   16.31   1  203   202  2.29     5.60  1.35
+    ## Bidders                6 654   15.42  30.37    6.00    8.61    7.41   0  215   215  4.13    19.49  1.19
+    ## LowestBid              7 654   71.65 186.78    1.00   22.55    0.00   0 1519  1519  4.14    21.56  7.30
+    ## LowestSuccessfulBid    8 654  385.88 617.59    1.00  255.52    1.48   0 2700  2700  1.56     1.53 24.15
+    ## HighestBid             9 654  905.76 896.33  700.00  797.31 1036.34   0 4140  4140  0.80    -0.10 35.05
+    ## StudentAcctType*      10 654    4.24   1.68    5.00    4.33    1.48   1    7     6 -0.55    -0.48  0.07
+    ## Level*                11 654    3.01   1.00    3.00    3.14    1.48   1    4     3 -0.90    -0.22  0.04
+    ## BpQ                   12 654    1.52   2.29    0.68    0.99    0.97   0   18    18  2.66     8.76  0.09
+    ## StartTime             13 654 1336.39 264.01 1400.00 1341.22  296.52 800 1800  1000 -0.19    -0.71 10.32
+    ## DayText*              14 654    3.00   1.34    3.00    2.99    1.48   1    5     4 -0.05    -1.18  0.05
+    ## LessonTime*           15 654    1.88   0.58    2.00    1.85    0.00   1    3     2  0.01    -0.13  0.02
 
 ``` r
 summary(mydata)
 ```
 
-    ##    ModuleCode        AcadYear   Semester Round        Quota           Bidders         LowestBid       LowestSuccessfulBid   HighestBid                                        StudentAcctType     Level           BpQ             StartTime         DayText         LessonTime  
-    ##  PL1101E: 230   2011/2012:460   1:1587   1A:640   Min.   :  1.00   Min.   :  0.00   Min.   :   0.00   Min.   :   0        Min.   :   0.0   New Students [P]                           : 319   Level 1: 230   Min.   : 0.00000   Min.   : 800   Monday   : 116   Afternoon: 427  
-    ##  PL3232 : 134   2013/2014:449   2:1291   1B:386   1st Qu.:  4.00   1st Qu.:  1.00   1st Qu.:   1.00   1st Qu.:   1        1st Qu.:   1.0   NUS Students [G]                           : 135   Level 2: 182   1st Qu.: 0.02128   1st Qu.:1200   Tuesday  : 134   Evening  :  73  
-    ##  PL3236 : 121   2015/2016:423            1C:289   Median : 14.00   Median :  3.00   Median :   1.00   Median :   1        Median : 350.0   NUS Students [P, G]                        : 339   Level 3:1623   Median : 0.30000   Median :1400   Wednesday: 143   Morning  : 154  
-    ##  PL3234 : 120   2014/2015:398            2A:419   Mean   : 25.09   Mean   : 12.38   Mean   :  69.39   Mean   : 251        Mean   : 718.1   NUS Students [P]                           : 336   Level 4: 843   Mean   : 1.01954   Mean   :1336   Thursday : 159   NA's     :2224  
-    ##  PL3235 : 119   2016/2017:349            2B:467   3rd Qu.: 32.00   3rd Qu.:  9.00   3rd Qu.:   8.00   3rd Qu.: 201        3rd Qu.:1232.8   Returning Students [P]                     :1231                  3rd Qu.: 1.25000   3rd Qu.:1575   Friday   : 102                   
-    ##  PL3233 : 117   2012/2013:345            3A:376   Max.   :430.00   Max.   :491.00   Max.   :2430.00   Max.   :3459        Max.   :4801.0   Returning Students [P] and NUS Students [G]: 171                  Max.   :18.00000   Max.   :1800   NA's     :2224                   
-    ##  (Other):2037   (Other)  :454            3B:301                                                                                            Returning Students and New Students [P]    : 347                                     NA's   :2224
+    ##    ModuleCode       AcadYear   Semester Round        Quota          Bidders         LowestBid       LowestSuccessfulBid   HighestBid                                        StudentAcctType     Level          BpQ            StartTime         DayText        LessonTime 
+    ##  PL1101E: 96   2016/2017:200   1:454    1A:158   Min.   :  1.0   Min.   :  0.00   Min.   :   0.00   Min.   :   0.0      Min.   :   0.0   New Students [P]                           : 75    Level 1: 96   Min.   : 0.0000   Min.   : 800   Monday   :116   Morning  :154  
+    ##  PL4880L: 32   2017/2018:214   2:200    1B: 79   1st Qu.:  3.0   1st Qu.:  2.00   1st Qu.:   1.00   1st Qu.:   1.0      1st Qu.:  10.0   NUS Students [G]                           : 43    Level 2: 36   1st Qu.: 0.0878   1st Qu.:1200   Tuesday  :134   Afternoon:427  
+    ##  PL3232 : 29   2018/2019:240            1C: 91   Median : 12.0   Median :  6.00   Median :   1.00   Median :   1.0      Median : 700.0   NUS Students [P, G]                        : 78    Level 3:285   Median : 0.6750   Median :1400   Wednesday:143   Evening  : 73  
+    ##  PL3233 : 28                            2A: 97   Mean   : 25.3   Mean   : 15.42   Mean   :  71.65   Mean   : 385.9      Mean   : 905.8   NUS Students [P]                           : 61    Level 4:237   Mean   : 1.5223   Mean   :1336   Thursday :159                  
+    ##  PL4235 : 28                            2B: 90   3rd Qu.: 35.0   3rd Qu.: 12.75   3rd Qu.:  20.00   3rd Qu.: 700.0      3rd Qu.:1529.8   Returning Students [P]                     :298                  3rd Qu.: 1.7500   3rd Qu.:1575   Friday   :102                  
+    ##  PL4237 : 28                            3A: 77   Max.   :203.0   Max.   :215.00   Max.   :1519.00   Max.   :2700.0      Max.   :4140.0   Returning Students [P] and NUS Students [G]: 46                  Max.   :18.0000   Max.   :1800                                  
+    ##  (Other):413                            3B: 62                                                                                           Returning Students and New Students [P]    : 53
 
 ## Univariate Histograms
 
@@ -422,7 +454,7 @@ for(r in 1:length(facnames.mod))
          geom_text() + 
          scale_fill_gradient(low = "white", high = "violetred") + 
          theme_minimal() + 
-         theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
+         theme(axis.text.x = element_text(angle = 90, vjust = -0.3))
      )
    }
   }
@@ -514,13 +546,13 @@ for(r in 1:length(numnames))
      
      plot(
        ggplot(data = mydata, aes_string(x = numnames[r], y = numnames[i])) +
-         geom_point(color = "violetred", size = 2, alpha = 0.5) +
+         geom_point(color = "violetred", size = 2, alpha = 0.3) +
          theme_classic() + 
          geom_abline(slope = reg$coefficients[2], intercept = reg$coefficients[1], lty = "dashed") + 
          geom_label(aes(x = Inf, y = Inf, label = paste0("Standardized Regression Coefficient = ",
                                                          round(stdreg$coefficients[2],3)),
                         hjust = 1, vjust = 1)) + 
-         theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
+         theme(axis.text.x = element_text(angle = 90, vjust = -0.3))
      )
    }
   }
@@ -637,7 +669,7 @@ for(r in facnames.mod)
       geom_bar(stat = "identity") + 
       theme_classic() + 
       theme(legend.position = "none",
-            axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
+            axis.text.x = element_text(angle = 90, vjust = -0.3))
     )
   }
 }
@@ -823,7 +855,7 @@ for(i in numnames)
       geom_bar(stat = "identity") + 
       theme_classic() + 
       theme(legend.position = "none",
-            axis.text.x = element_text(angle = 90, size = 10, vjust = -1)) + 
+            axis.text.x = element_text(angle = 90, vjust = -1)) + 
       coord_flip()
   )
 }
@@ -857,8 +889,132 @@ for(i in numnames)
 
 ![](README_files/figure-gfm/exploremodule-7.png)<!-- -->
 
-# Is It Easier To Bid For Modules With Extremely Early/Late Lectures?
+# Phase 5: Exploration
 
 ``` r
-# testing
+# number of modules
+unique(mydata$ModuleCode)
 ```
+
+    ##  [1] PL1101E PL2131  PL2132  PL3232  PL3233  PL3234  PL3235  PL3236  PL3239  PL3240  PL3241  PL3242  PL3244  PL3248  PL3254  PL3256  PL3257  PL3258  PL3259  PL3260  PL3281  PL3281A PL3281D PL3282  PL3282A PL3282C PL3283  PL3283A PL3283B PL3287  PL3289  PL4201  PL4202  PL4203  PL4205  PL4207  PL4214  PL4218  PL4219  PL4221  PL4222  PL4223  PL4224  PL4225  PL4226  PL4228  PL4229  PL4231  PL4235  PL4237  PL4238  PL4239  PL4240  PL4241  PL4880F PL4880G PL4880K PL4880L PL4880P PL4880Q PL4880R
+    ## Levels: PL1101E PL2131 PL2132 PL3232 PL3233 PL3234 PL3235 PL3236 PL3239 PL3240 PL3241 PL3242 PL3244 PL3248 PL3254 PL3256 PL3257 PL3258 PL3259 PL3260 PL3281 PL3281A PL3281D PL3282 PL3282A PL3282C PL3283 PL3283A PL3283B PL3287 PL3289 PL4201 PL4202 PL4203 PL4205 PL4207 PL4214 PL4218 PL4219 PL4221 PL4222 PL4223 PL4224 PL4225 PL4226 PL4228 PL4229 PL4231 PL4235 PL4237 PL4238 PL4239 PL4240 PL4241 PL4880F PL4880G PL4880K PL4880L PL4880P PL4880Q PL4880R
+
+``` r
+# number of rows belonging to each module
+xtabs(~ ModuleCode, data  = mydata, subset = NULL)
+```
+
+    ## ModuleCode
+    ## PL1101E  PL2131  PL2132  PL3232  PL3233  PL3234  PL3235  PL3236  PL3239  PL3240  PL3241  PL3242  PL3244  PL3248  PL3254  PL3256  PL3257  PL3258  PL3259  PL3260  PL3281 PL3281A PL3281D  PL3282 PL3282A PL3282C  PL3283 PL3283A PL3283B  PL3287  PL3289  PL4201  PL4202  PL4203  PL4205  PL4207  PL4214  PL4218  PL4219  PL4221  PL4222  PL4223  PL4224  PL4225  PL4226  PL4228  PL4229  PL4231  PL4235  PL4237  PL4238  PL4239  PL4240  PL4241 PL4880F PL4880G PL4880K PL4880L PL4880P PL4880Q PL4880R 
+    ##      96      18      18      29      28      20      27      24       7      18       7      20      11       6      11       7       8       7       5       4      13       3       7       7       1       1       1       1       7       4       1       9       5       4      15       3       2       3       4       8       5       3       1       1       6       4       1       5      28      28       6       2       4       5       2       2      14      32       3       4      28
+
+``` r
+# datatable(mydata)
+aggregate(BpQ ~ AcadYear + Semester + ModuleCode,
+          data = mydata,
+          FUN = mean)
+```
+
+    ##      AcadYear Semester ModuleCode        BpQ
+    ## 1   2017/2018        1    PL1101E 1.56868739
+    ## 2   2018/2019        1    PL1101E 2.40971145
+    ## 3   2016/2017        2    PL1101E 0.35215039
+    ## 4   2017/2018        1     PL2131 1.29896694
+    ## 5   2018/2019        1     PL2131 2.01756432
+    ## 6   2016/2017        2     PL2131 1.49786980
+    ## 7   2017/2018        1     PL2132 1.73152848
+    ## 8   2018/2019        1     PL2132 2.23710317
+    ## 9   2016/2017        2     PL2132 2.70238095
+    ## 10  2017/2018        1     PL3232 0.33741406
+    ## 11  2018/2019        1     PL3232 1.43125000
+    ## 12  2016/2017        2     PL3232 0.28010602
+    ## 13  2017/2018        1     PL3233 0.11450686
+    ## 14  2018/2019        1     PL3233 4.02482270
+    ## 15  2016/2017        2     PL3233 0.18957370
+    ## 16  2017/2018        1     PL3234 0.58333333
+    ## 17  2018/2019        1     PL3234 1.17023810
+    ## 18  2016/2017        2     PL3234 0.77738772
+    ## 19  2017/2018        1     PL3235 3.70454545
+    ## 20  2018/2019        1     PL3235 0.78156146
+    ## 21  2016/2017        2     PL3235 0.36139025
+    ## 22  2017/2018        1     PL3236 1.00378788
+    ## 23  2018/2019        1     PL3236 0.51097829
+    ## 24  2016/2017        2     PL3236 0.13751359
+    ## 25  2018/2019        1     PL3239 0.05111517
+    ## 26  2017/2018        1     PL3240 0.10205696
+    ## 27  2018/2019        1     PL3240 0.05622694
+    ## 28  2016/2017        2     PL3240 1.98088972
+    ## 29  2017/2018        1     PL3241 0.82491944
+    ## 30  2017/2018        1     PL3242 0.09184581
+    ## 31  2016/2017        2     PL3242 2.13561254
+    ## 32  2017/2018        1     PL3244 1.45694444
+    ## 33  2018/2019        1     PL3244 0.07664683
+    ## 34  2016/2017        2     PL3248 1.92543860
+    ## 35  2018/2019        1     PL3254 0.02986168
+    ## 36  2016/2017        2     PL3254 4.29411765
+    ## 37  2016/2017        2     PL3256 0.79467193
+    ## 38  2017/2018        1     PL3257 2.03125000
+    ## 39  2018/2019        1     PL3257 1.60227273
+    ## 40  2016/2017        2     PL3258 0.05754481
+    ## 41  2017/2018        1     PL3259 2.35000000
+    ## 42  2016/2017        2     PL3260 2.40789474
+    ## 43  2017/2018        1     PL3281 5.82000000
+    ## 44  2018/2019        1     PL3281 1.01696970
+    ## 45  2016/2017        2     PL3281 2.00000000
+    ## 46  2016/2017        2    PL3281A 3.29629630
+    ## 47  2017/2018        1    PL3281D 0.25309393
+    ## 48  2017/2018        1     PL3282 1.36000000
+    ## 49  2018/2019        1     PL3282 1.46000000
+    ## 50  2016/2017        2    PL3282A 1.52000000
+    ## 51  2017/2018        1    PL3282C 1.44000000
+    ## 52  2017/2018        1     PL3283 1.44000000
+    ## 53  2016/2017        2    PL3283A 1.44000000
+    ## 54  2018/2019        1    PL3283B 0.57142857
+    ## 55  2018/2019        1     PL3287 1.34833333
+    ## 56  2016/2017        2     PL3289 1.36000000
+    ## 57  2017/2018        1     PL4201 4.06306306
+    ## 58  2018/2019        1     PL4201 1.48834499
+    ## 59  2016/2017        2     PL4202 1.41242001
+    ## 60  2018/2019        1     PL4203 2.00833333
+    ## 61  2017/2018        1     PL4205 2.42982456
+    ## 62  2018/2019        1     PL4205 1.40512821
+    ## 63  2017/2018        1     PL4207 1.40000000
+    ## 64  2018/2019        1     PL4207 6.18750000
+    ## 65  2016/2017        2     PL4214 1.80000000
+    ## 66  2016/2017        2     PL4218 3.73333333
+    ## 67  2018/2019        1     PL4219 3.45000000
+    ## 68  2016/2017        2     PL4219 2.12820513
+    ## 69  2017/2018        1     PL4221 1.83333333
+    ## 70  2018/2019        1     PL4221 0.50416667
+    ## 71  2016/2017        2     PL4222 0.82336134
+    ## 72  2017/2018        1     PL4223 1.15555556
+    ## 73  2018/2019        1     PL4223 5.73750000
+    ## 74  2018/2019        1     PL4224 1.27500000
+    ## 75  2016/2017        2     PL4225 1.02500000
+    ## 76  2017/2018        1     PL4226 7.16666667
+    ## 77  2018/2019        1     PL4226 1.37500000
+    ## 78  2016/2017        2     PL4226 5.12500000
+    ## 79  2017/2018        1     PL4228 3.27500000
+    ## 80  2018/2019        1     PL4228 1.47500000
+    ## 81  2016/2017        2     PL4228 1.32500000
+    ## 82  2017/2018        1     PL4229 1.42500000
+    ## 83  2016/2017        2     PL4231 1.10269231
+    ## 84  2017/2018        1     PL4235 3.29332298
+    ## 85  2018/2019        1     PL4235 3.04285714
+    ## 86  2017/2018        1     PL4237 0.27413985
+    ## 87  2016/2017        2     PL4238 1.91765873
+    ## 88  2017/2018        1     PL4239 6.30000000
+    ## 89  2017/2018        1     PL4240 1.07500000
+    ## 90  2016/2017        2     PL4240 4.00000000
+    ## 91  2016/2017        2     PL4241 1.44920635
+    ## 92  2017/2018        1    PL4880F 6.71250000
+    ## 93  2016/2017        2    PL4880G 2.56250000
+    ## 94  2018/2019        1    PL4880K 3.72380952
+    ## 95  2018/2019        1    PL4880L 0.42664072
+    ## 96  2016/2017        2    PL4880L 2.83333333
+    ## 97  2018/2019        1    PL4880P 1.35000000
+    ## 98  2016/2017        2    PL4880P 4.01282051
+    ## 99  2016/2017        2    PL4880Q 2.05833333
+    ## 100 2017/2018        1    PL4880R 3.90773810
+    ## 101 2018/2019        1    PL4880R 1.64209838
+    ## 102 2016/2017        2    PL4880R 2.57500000

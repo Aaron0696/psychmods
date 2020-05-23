@@ -4,9 +4,9 @@ author: "Aaron0696"
 output:
   github_document:
     toc: true
-    toc_depth: 1
-    fig_width: 4
-    fig_height: 4
+    toc_depth: 3
+    fig_width: 3
+    fig_height: 3
   html_document:
     fig_align: center
     code_folding: show
@@ -20,9 +20,9 @@ output:
 
 # Phase 1: Setting Up Environment, Packages And Loading Data.
 
-* Load packages.
-
 ## >Packages And Options
+
+* Load packages.
 
 ```{r setup, warning = FALSE, message = FALSE}
 # rmarkdown::render(input = "NUSmodAn.Rmd",
@@ -39,10 +39,10 @@ library(dplyr)
 options(width = 999)
 ```
 
+## >>Bidding Data From `nusmods`
+
 * Extract data from `nusmods` API at https://nusmods.com/api/.
 * CORS bidding data.
-
-## >>Bidding Data From `nusmods`
 
 ```{r extract, eval=FALSE}
 # load bidding data
@@ -51,13 +51,13 @@ before <- Sys.time()
 # read data directly from URL
 myjson <- fromJSON(file = url("https://api.nusmods.com/corsBiddingStatsRaw.json"))
 # create empty dataframe which will act as a container to be populated with data
-mydata <- data.frame()
-# for each element in the myjson list, append it to mydata
+myBid <- data.frame()
+# for each element in the myjson list, append it to myBid
 for(r in 1:length(myjson))
 {
   if(myjson[[r]]$Semester == 1 | myjson[[r]]$Semester == 2)
   {
-    mydata <- rbind(mydata, myjson[[r]])
+    myBid <- rbind(myBid, myjson[[r]])
   }
   myjson[[r]] <- NA
 }
@@ -67,21 +67,19 @@ after - before
 # remove myjson to free up some RAM
 rm(myjson)
 # peek at the data
-head(mydata)
-tail(mydata)
+head(myBid)
+tail(myBid)
 # data struct
-str(mydata)
+str(myBid)
 # save
-saveRDS(mydata, file = "mydata.RDS")
+saveRDS(myBid, file = "myBid.RDS")
 ```
 
-## >>Load `mydata.RDS`
+## >>Load `myBid.RDS`
 
 ```{r loadrds}
-mydata <- readRDS("mydata.RDS")
+myBid <- readRDS("mydata.RDS")
 ```    
-
-* Module information data.
 
 ## >Module Information
 
@@ -89,7 +87,7 @@ mydata <- readRDS("mydata.RDS")
 myjson <- fromJSON(file = url("https://nusmods.com/api/moduleTimetableDeltaRaw.json"))
 # create empty dataframe which will act as a container to be populated with data
 myModInfo <- data.frame()
-# for each element in the myjson list, append it to mydata
+# for each element in the myjson list, append it to myBid
 for(r in 1:length(myjson))
 {
   if(myjson[[r]]$Semester == 1 | myjson[[r]]$Semester == 2)
@@ -110,13 +108,13 @@ myModInfo <- readRDS("myModInfo.RDS")
 ```
 
 # Phase 2: Filter, Transform And Merge Data
+    
+## >`myModInfo`
 
 * Filter Module Information, `myModInfo`.
     * Removing non-Psychology modules.
     * Removing tutorial information.
     * Removing duplicated rows.
-    
-## >`myModInfo`
 
 ### >>Filter
 
@@ -140,59 +138,56 @@ myModInfo <- distinct(myModInfo,
                       ModuleCode, AcadYear, Semester, StartTime, DayText)
 ```  
     
-* Filter CORS Bidding Information, `mydata`.
+## >`myBid`
+
+* Filter CORS Bidding Information, `myBid`.
     * Removing non-Psychology modules, including Roots and Wings (PLS) and Psychology for non-Psychology students (PLB).
     * Removing information from reserved modules.
-    
-## >`mydata`
 
 ### >>Filter
 
 ```{r filter2}
 # remove non-psychology modules
-mydata <- subset(mydata,
+myBid <- subset(myBid,
                  # only keep rows where module code begins with PL
-                 str_detect(mydata$ModuleCode, "^PL"))
-# remove core psychology modules, they are PL323[2 to 6], PL1101E, PL2131, PL2132.
+                 str_detect(myBid$ModuleCode, "^PL"))
+
 # also remove Roots and Wings (PLS8001) and psychology for non-psych students (PLB1201)
-mydata <- subset(mydata,
-                 !str_detect(mydata$ModuleCode, "PLS|PLB"))
+myBid <- subset(myBid,
+                 !str_detect(myBid$ModuleCode, "PLS|PLB"))
 
 # remove the rounds where it was reserved
-mydata <- subset(mydata,
-                     !str_detect(mydata$StudentAcctType, "Reserved"))
-# remove modules that can only be pre-allocated such as PL3231, PL3551, PL6...
-#TODO
-
+myBid <- subset(myBid,
+                     !str_detect(myBid$StudentAcctType, "Reserved"))
 
 # remove unneeded columns
-mydata <- mydata[, -grep("Group|Faculty", names(mydata))]
+myBid <- myBid[, -grep("Group|Faculty", names(myBid))]
 ```
-    
+
+## >>Transform And Merge
+
 * Transform
     * Created a new variable `Level` that denotes whether the module is Level 1, 2, 3 or 4.
     * Created a new variable `BpQ` that represents Bids per Quota, which is the number of bidders for each available quota of the module, derived from `Bidders` and `Quota`. Used as a measure of the popularity of a module, Higher `BpQ` signifies greater popularity.
     * Created a new variable `LessonTime` that denotes whether the lecture begins in the morning (before 12pm), in the afternoon (12pm to 4pm), in the evening (after 4pm).
 * Merge
-    * Add the information from `myModInfo` to `mydata`.
-
-## >>Transform And Merge
+    * Add the information from `myModInfo` to `myBid`.
 
 ```{r transform1}
 # create new column that indicates the level of the module, based on their module code
-mydata$Level <- ifelse(str_detect(mydata$ModuleCode, "1[0-9][0-9][0-9]"), "Level 1",
-                       ifelse(str_detect(mydata$ModuleCode, "2[0-9][0-9][0-9]"), "Level 2",
-                              ifelse(str_detect(mydata$ModuleCode, "3[0-9][0-9][0-9]"), "Level 3",
-                                     ifelse(str_detect(mydata$ModuleCode, "4[0-9][0-9][0-9]"), "Level 4", 
+myBid$Level <- ifelse(str_detect(myBid$ModuleCode, "1[0-9][0-9][0-9]"), "Level 1",
+                       ifelse(str_detect(myBid$ModuleCode, "2[0-9][0-9][0-9]"), "Level 2",
+                              ifelse(str_detect(myBid$ModuleCode, "3[0-9][0-9][0-9]"), "Level 3",
+                                     ifelse(str_detect(myBid$ModuleCode, "4[0-9][0-9][0-9]"), "Level 4", 
                                             "Graduate Module"))))
 # crosstabs to doublecheck
 # xtabs( ~ ModuleCode + Level, 
-#        data = mydata, subset = NULL)
+#        data = myBid, subset = NULL)
 ```
 
 ```{r transform1.1}
 # create new column Bids Per Quota (BpQ)
-mydata$BpQ <- as.numeric(mydata$Bidders)/as.numeric(mydata$Quota)
+myBid$BpQ <- as.numeric(myBid$Bidders)/as.numeric(myBid$Quota)
 ```
 
 ```{r transform1.2}
@@ -203,11 +198,11 @@ myModInfo$LessonTime <- ifelse(as.numeric(myModInfo$StartTime) < 1200, "Morning"
 ```
 
 ```{r merge}
-mydata <- merge(x = mydata, 
+# note: there is only module information from AY2016/17 onwards
+# all data before that period will be dropped
+mydata <- merge(x = myBid, 
                  y = myModInfo,
-                 by = c("ModuleCode", "AcadYear", "Semester"),
-                 all.x = TRUE,
-                 all.y = FALSE)
+                 by = c("ModuleCode", "AcadYear", "Semester"))
 ```
 
 ## >Coercing Columns To Factors/Numeric
@@ -243,6 +238,13 @@ numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numname
 ```{r daytext}
 mydata$DayText <- factor(mydata$DayText,
                          levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"))
+```
+
+## >Rearranging `LessonTime` Levels
+
+```{r lessontime}
+mydata$LessonTime <- factor(mydata$LessonTime,
+                         levels = c("Morning", "Afternoon", "Evening"))
 ```
 
 # Phase 3: Data Diagnostics
@@ -332,7 +334,7 @@ for(r in 1:length(facnames.mod))
          geom_text() + 
          scale_fill_gradient(low = "white", high = "violetred") + 
          theme_minimal() + 
-         theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
+         theme(axis.text.x = element_text(angle = 90, vjust = -0.3))
      )
    }
   }
@@ -364,13 +366,13 @@ for(r in 1:length(numnames))
      
      plot(
        ggplot(data = mydata, aes_string(x = numnames[r], y = numnames[i])) +
-         geom_point(color = "violetred", size = 2, alpha = 0.5) +
+         geom_point(color = "violetred", size = 2, alpha = 0.3) +
          theme_classic() + 
          geom_abline(slope = reg$coefficients[2], intercept = reg$coefficients[1], lty = "dashed") + 
          geom_label(aes(x = Inf, y = Inf, label = paste0("Standardized Regression Coefficient = ",
                                                          round(stdreg$coefficients[2],3)),
                         hjust = 1, vjust = 1)) + 
-         theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
+         theme(axis.text.x = element_text(angle = 90, vjust = -0.3))
      )
    }
   }
@@ -403,7 +405,7 @@ for(r in facnames.mod)
       geom_bar(stat = "identity") + 
       theme_classic() + 
       theme(legend.position = "none",
-            axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3))
+            axis.text.x = element_text(angle = 90, vjust = -0.3))
     )
   }
 }
@@ -421,15 +423,31 @@ for(i in numnames)
       geom_bar(stat = "identity") + 
       theme_classic() + 
       theme(legend.position = "none",
-            axis.text.x = element_text(angle = 90, size = 10, vjust = -1)) + 
+            axis.text.x = element_text(angle = 90, vjust = -1)) + 
       coord_flip()
   )
 }
 ```
 
-# Is It Easier To Bid For Modules With Extremely Early/Late Lectures?
+# Phase 5: Exploration
+
+```{r numods}
+# number of modules
+unique(mydata$ModuleCode)
+```
+
+```{r rowsmod}
+# number of rows belonging to each module
+xtabs(~ ModuleCode, data  = mydata, subset = NULL)
+```
 
 ```{r}
-# testing
+# datatable(mydata)
+aggregate(BpQ ~ AcadYear + Semester + ModuleCode,
+          data = mydata,
+          FUN = mean)
 ```
+
+
+
 
