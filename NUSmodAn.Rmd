@@ -266,7 +266,7 @@ summary(mydata)
 
 ## Univariate Histograms
 
-```{r explore1, warning = FALSE, eval = FALSE, dpi = 150}
+```{r explore1, warning = FALSE, eval = TRUE, dpi = 150}
 # plot the categorical variables
 # note: I did not include ModuleCode in this exploratory graph because it has too many levels (83)
 for(r in facnames.mod)
@@ -285,7 +285,7 @@ for(r in facnames.mod)
 }
 ```
 
-```{r explore2, warning = FALSE, eval = FALSE, dpi = 150}
+```{r explore2, warning = FALSE, eval = TRUE, dpi = 150}
 # plot the continuous variables
 for(r in numnames)
 {
@@ -307,7 +307,7 @@ for(r in numnames)
 
 ### Categorical-Categorical
 
-```{r explorecatcat, warning = FALSE, eval = FALSE, dpi = 150}
+```{r explorecatcat, warning = FALSE, eval = TRUE, dpi = 150}
 # create vector to loop across
 for(r in 1:length(facnames.mod))
 {
@@ -341,7 +341,7 @@ for(r in 1:length(facnames.mod))
 
 ### Continuous-Continuous
 
-```{r exploreconcon, warning = FALSE, eval = FALSE, dpi = 150}
+```{r exploreconcon, warning = FALSE, eval = TRUE, dpi = 150}
 for(r in 1:length(numnames))
 {
   for(i in 1:length(numnames))
@@ -391,7 +391,7 @@ corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(myd
 
 ### Continuous-Categorical
 
-```{r exploreconcat, warning = FALSE, eval = FALSE, dpi = 150}
+```{r exploreconcat, warning = FALSE, eval = TRUE, dpi = 150}
 for(r in facnames.mod)
 {
   for(i in numnames)
@@ -411,7 +411,7 @@ for(r in facnames.mod)
 
 ### By Module
 
-```{r exploremodule, fig.height = 12, warning = FALSE, eval = FALSE, dpi = 150}
+```{r exploremodule, fig.height = 12, warning = FALSE, eval = TRUE, dpi = 150}
 for(i in numnames)
 {
   cat(paste0("ModuleCode"," ~ ",i))
