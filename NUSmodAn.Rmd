@@ -5,8 +5,8 @@ output:
   github_document:
     toc: true
     toc_depth: 3
-    fig_width: 3
-    fig_height: 3
+    fig_width: 4
+    fig_height: 4
   html_document:
     fig_align: center
     code_folding: show
@@ -268,7 +268,7 @@ summary(mydata)
 
 ## Univariate Histograms
 
-```{r explore1, warning = FALSE, eval = TRUE, dpi = 96}
+```{r explore1, warning = FALSE, eval = TRUE, dpi = 150}
 # plot the categorical variables
 # note: I did not include ModuleCode in this exploratory graph because it has too many levels (83)
 for(r in facnames.mod)
@@ -287,7 +287,7 @@ for(r in facnames.mod)
 }
 ```
 
-```{r explore2, warning = FALSE, eval = TRUE, dpi = 96}
+```{r explore2, warning = FALSE, eval = TRUE, dpi = 150}
 # plot the continuous variables
 for(r in numnames)
 {
@@ -309,7 +309,7 @@ for(r in numnames)
 
 ### Categorical-Categorical
 
-```{r explorecatcat, warning = FALSE, eval = TRUE, dpi = 96}
+```{r explorecatcat, warning = FALSE, eval = TRUE, dpi = 150}
 # create vector to loop across
 for(r in 1:length(facnames.mod))
 {
@@ -343,7 +343,7 @@ for(r in 1:length(facnames.mod))
 
 ### Continuous-Continuous
 
-```{r exploreconcon, warning = FALSE, eval = TRUE, dpi = 96}
+```{r exploreconcon, warning = FALSE, eval = TRUE, dpi = 150}
 for(r in 1:length(numnames))
 {
   for(i in 1:length(numnames))
@@ -383,7 +383,7 @@ for(r in 1:length(numnames))
 
 ### Correlation Matrix
 
-```{r corrmatrix, fig.width = 4, fig.height = 4, dpi = 96}
+```{r corrmatrix, fig.width = 4, fig.height = 4, dpi = 150}
 corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(mydata))]),
                upper = "color",
                tl.pos = "lt",
@@ -393,7 +393,7 @@ corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(myd
 
 ### Continuous-Categorical
 
-```{r exploreconcat, warning = FALSE, eval = TRUE, dpi = 96}
+```{r exploreconcat, warning = FALSE, eval = TRUE, dpi = 150}
 for(r in facnames.mod)
 {
   for(i in numnames)
@@ -413,7 +413,7 @@ for(r in facnames.mod)
 
 ### By Module
 
-```{r exploremodule, fig.height = 12, warning = FALSE, eval = TRUE, dpi = 96}
+```{r exploremodule, fig.height = 12, warning = FALSE, eval = TRUE, dpi = 150}
 for(i in numnames)
 {
   cat(paste0("ModuleCode"," ~ ",i))
