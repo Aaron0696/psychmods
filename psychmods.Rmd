@@ -16,6 +16,8 @@ output:
     toc: yes
     toc_float: yes
     df_print: paged
+    fig_width: 4
+    fig_height: 4
 ---
 ```{r rendering, eval = FALSE, include = FALSE}
 # for github
@@ -25,7 +27,7 @@ rmarkdown::render(input = "psychmods.Rmd",
 # for html
 rmarkdown::render(input = "psychmods.Rmd",
                   output_format = "html_document",
-                  output_file = "psychmods.html")
+                  output_file = "docs/index.html")
 ```
 
 
@@ -35,9 +37,6 @@ rmarkdown::render(input = "psychmods.Rmd",
     3.
 
 # Phase 1: Setting Up Environment, Packages And Loading Data.
-
-<details>
-  <summary><b>View Code/Details</b></summary>
 
 ## >Packages And Options
 
@@ -53,7 +52,7 @@ library(psych)
 library(corrplot)
 library(dplyr)
 options(width = 999)
-knitr::opts_chunk$set(dpi = 300, out.width = "50%", eval = TRUE)
+knitr::opts_chunk$set(dpi = 300, out.width = "50%", eval = FALSE)
 ```
 
 ## >>Bidding Data From `nusmods`
@@ -132,12 +131,7 @@ saveRDS(myModInfo, file = "myModInfo.RDS")
 myModInfo <- readRDS("myModInfo.RDS")
 ```
 
-</details>
-
 # Phase 2: Filter, Transform And Merge Data
-
-<details>
-  <summary><b>View Code/Details</b></summary>
     
 ## >`myModInfo`
 
@@ -277,8 +271,6 @@ mydata$LessonTime <- factor(mydata$LessonTime,
                             levels = c("Morning", "Afternoon", "Evening"))
 ```
 
-</details>
-
 # Phase 3: Data Diagnostics
 
 * Plot univariate histograms and bivariate plots using loops for **almost every** combination of variables.
@@ -297,9 +289,6 @@ summary(mydata)
 ```
 
 ## Univariate Histograms
-
-<details>
-  <summary><b>View Histograms</b></summary>
 
 ```{r explore1, warning = FALSE, }
 # plot the categorical variables
@@ -338,12 +327,7 @@ for(r in numnames)
 }
 ```
 
-</details>
-
 ## Bivariate Plots
-
-<details>
-  <summary><b>View Categorical-Categorical Heatmaps</b></summary>
 
 ### Categorical-Categorical
 
@@ -379,11 +363,6 @@ for(r in 1:length(facnames.mod))
   }
 }
 ```
-
-</details>
-
-<details>
-  <summary><b>View Continuous-Continuous Scatterplots</b></summary>
 
 ### Continuous-Continuous
 
@@ -423,11 +402,6 @@ for(r in 1:length(numnames))
 }
 ```
 
-</details>
-
-<details>
-  <summary><b>View Continuous-Continuous Correlation Matrix</b></summary>
-
 ### Correlation Matrix
 
 ```{r corrmatrix, fig.width = 4, fig.height = 4}
@@ -438,12 +412,7 @@ corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(myd
                cl.cex = 0.5)
 ```
 
-</details>
-
 ### Continuous-Categorical
-
-<details>
-  <summary><b>View Continuous-Categorical Boxplots</b></summary>
 
 ```{r exploreconcat, warning = FALSE, }
 for(r in facnames.mod)
@@ -462,8 +431,6 @@ for(r in facnames.mod)
   }
 }
 ```
-
-</details>
 
 # Phase 5: Exploration
 
