@@ -4,32 +4,19 @@ Aaron0696
 
   - [Phase 1: Setting Up Environment, Packages And Loading
     Data.](#phase-1-setting-up-environment-packages-and-loading-data.)
-      - [\>Packages And Options](#packages-and-options)
-      - [\>Extract Data](#extract-data)
-      - [\>Module Information](#module-information)
   - [Phase 2: Filter, Transform And Merge
     Data](#phase-2-filter-transform-and-merge-data)
-      - [\>`myModInfo`](#mymodinfo)
-      - [\>`mydata`](#mydata)
-      - [\>Vectors Of Column Names](#vectors-of-column-names)
-  - [Phase 3: Explore](#phase-3-explore)
-      - [Univariate Descriptive
-        Statistics](#univariate-descriptive-statistics)
-      - [Univariate Histograms](#univariate-histograms)
-      - [Bivariate Plots](#bivariate-plots)
+  - [Phase 3: Brute Force Exploration](#phase-3-brute-force-exploration)
   - [Is It Easier To Bid For Modules With Extremely Early/Late
     Lectures?](#is-it-easier-to-bid-for-modules-with-extremely-earlylate-lectures)
 
 # Phase 1: Setting Up Environment, Packages And Loading Data.
 
-  - Load packages
-  - Extract data from `nusmods` API at <https://nusmods.com/api/>.
-      - CORS bidding data.
-      - Module information.
+  - Load packages.
 
 <details>
 
-<summary>Expand Codes/Workflow</summary>
+<summary><b>View Code</b></summary>
 
 ## \>Packages And Options
 
@@ -48,9 +35,18 @@ library(dplyr)
 options(width = 999)
 ```
 
-## \>Extract Data
+</details>
 
-### \>\>Bidding Data From `nusmods`
+<br>
+
+  - Extract data from `nusmods` API at <https://nusmods.com/api/>.
+  - CORS bidding data.
+
+<details>
+
+<summary><b>View Code</b></summary>
+
+## \>\>Bidding Data From `nusmods`
 
 ``` r
 # load bidding data
@@ -83,11 +79,21 @@ str(mydata)
 saveRDS(mydata, file = "mydata.RDS")
 ```
 
-### \>\>Load `mydata.RDS`
+## \>\>Load `mydata.RDS`
 
 ``` r
 mydata <- readRDS("mydata.RDS")
 ```
+
+</details>
+
+<br>
+
+  - Module information data.
+
+<details>
+
+<summary><b>View Code</b></summary>
 
 ## \>Module Information
 
@@ -109,7 +115,7 @@ for(r in 1:length(myjson))
 saveRDS(myModInfo, file = "myModInfo.RDS")
 ```
 
-### \>\>Load `myModInfo.RDS`
+## \>\>Load `myModInfo.RDS`
 
 ``` r
 myModInfo <- readRDS("myModInfo.RDS")
@@ -123,23 +129,10 @@ myModInfo <- readRDS("myModInfo.RDS")
       - Removing non-Psychology modules.
       - Removing tutorial information.
       - Removing duplicated rows.
-  - Filter CORS Bidding Information, `mydata`.
-      - Removing non-Psychology modules, including Roots and Wings (PLS)
-        and Psychology for non-Psychology students (PLB).
-      - Removing information from reserved modules.
-  - Transform
-      - Created a new variable `Level` that denotes whether the module
-        is Level 1, 2, 3 or 4.
-      - Created a new variable `BpQ` that represents Bids per Quota,
-        which is the number of bidders for each available quota of the
-        module. Used as a measure of the popularity of a module, Higher
-        `BpQ` signifies greater popularity.
-  - Merge
-      - Add the information from `myModInfo` to `mydata`.
 
 <details>
 
-<summary>Expand Codes/Workflow</summary>
+<summary><b>View Code</b></summary>
 
 ## \>`myModInfo`
 
@@ -149,15 +142,34 @@ myModInfo <- readRDS("myModInfo.RDS")
 # only keep the Psychology modules information
 myModInfo <- subset(myModInfo,
                      str_detect(myModInfo$ModuleCode, "^PL"))
+```
+
+``` r
 # remove information about tutorials
 myModInfo <- subset(myModInfo,
                     myModInfo$LessonType != "TUTORIAL")
+```
+
+``` r
 # only keep these columns
 myModInfo <- myModInfo[,grep("ModuleCode|DayText|StartTime|Semester|AcadYear", names(myModInfo))]
 # remove duplicated rows based on columns of ModuleCode, Acadyear and Semester
 myModInfo <- distinct(myModInfo, 
                       ModuleCode, AcadYear, Semester, StartTime, DayText)
 ```
+
+</details>
+
+<br>
+
+  - Filter CORS Bidding Information, `mydata`.
+      - Removing non-Psychology modules, including Roots and Wings (PLS)
+        and Psychology for non-Psychology students (PLB).
+      - Removing information from reserved modules.
+
+<details>
+
+<summary><b>View Code</b></summary>
 
 ## \>`mydata`
 
@@ -176,12 +188,37 @@ mydata <- subset(mydata,
 # remove the rounds where it was reserved
 mydata <- subset(mydata,
                      !str_detect(mydata$StudentAcctType, "Reserved"))
+# remove modules that can only be pre-allocated such as PL3231, PL3551, PL6...
+#TODO
+
 
 # remove unneeded columns
 mydata <- mydata[, -grep("Group|Faculty", names(mydata))]
 ```
 
-### \>\>Transform And Merge
+</details>
+
+<br>
+
+  - Transform
+      - Created a new variable `Level` that denotes whether the module
+        is Level 1, 2, 3 or 4.
+      - Created a new variable `BpQ` that represents Bids per Quota,
+        which is the number of bidders for each available quota of the
+        module, derived from `Bidders` and `Quota`. Used as a measure of
+        the popularity of a module, Higher `BpQ` signifies greater
+        popularity.
+      - Created a new variable `LessonTime` that denotes whether the
+        lecture begins in the morning (before 12pm), in the afternoon
+        (12pm to 4pm), in the evening (after 4pm).
+  - Merge
+      - Add the information from `myModInfo` to `mydata`.
+
+<details>
+
+<summary><b>View Code</b></summary>
+
+## \>\>Transform And Merge
 
 ``` r
 # create new column that indicates the level of the module, based on their module code
@@ -193,19 +230,37 @@ mydata$Level <- ifelse(str_detect(mydata$ModuleCode, "1[0-9][0-9][0-9]"), "Level
 # crosstabs to doublecheck
 # xtabs( ~ ModuleCode + Level, 
 #        data = mydata, subset = NULL)
+```
 
+``` r
 # create new column Bids Per Quota (BpQ)
 mydata$BpQ <- as.numeric(mydata$Bidders)/as.numeric(mydata$Quota)
 ```
 
 ``` r
+# create new column Bids Per Quota (BpQ)
+myModInfo$LessonTime <- ifelse(as.numeric(myModInfo$StartTime) < 1200, "Morning",
+                            ifelse(as.numeric(myModInfo$StartTime) > 1600, "Evening",
+                                   "Afternoon"))
+```
+
+``` r
 mydata <- merge(x = mydata, 
-                 # exclude the columns of AcadYear and Semester as duplicate column messes up the function
                  y = myModInfo,
                  by = c("ModuleCode", "AcadYear", "Semester"),
                  all.x = TRUE,
                  all.y = FALSE)
 ```
+
+</details>
+
+<br>
+
+<details>
+
+<summary><b>Additional Codes</b></summary>
+
+## \>Coercing Columns To Factors/Numeric
 
 ``` r
 # transform these columns to numeric
@@ -214,7 +269,7 @@ for(r in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid",
   mydata[,grep(r, names(mydata))] <- as.numeric(mydata[,grep(r, names(mydata))])
 }
 # transform these columns to factors
-for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level", "StudentAcctType", "DayText"))
+for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level", "StudentAcctType", "DayText", "LessonTime"))
 {
   mydata[,grep(r, names(mydata))] <- factor(mydata[,grep(r, names(mydata))])
 }
@@ -233,9 +288,28 @@ numnames <- names(select_if(mydata, is.numeric))
 numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numnames)]
 ```
 
+## \>Rearranging `DayText` Levels
+
+``` r
+mydata$DayText <- factor(mydata$DayText,
+                         levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"))
+```
+
 </details>
 
-# Phase 3: Explore
+# Phase 3: Brute Force Exploration
+
+  - Plot univariate histograms and bivariate plots using loops for
+    **almost every** combination of variables.
+  - The graphs from this section are predominantly for diagnostics
+    rather than exploration, what I mean is that the graphs from this
+    section would make little sense if one tried to draw insights from
+    them. This is because they are aggregated across all other
+    variables.
+      - For example: The mean of `Bidders` is calculated across all
+        academic years, all bidding rounds, all modules…
+  - What I am looking out for in this section are odd patterns, like
+    zeroes in places where they shouldn’t be.
 
 ## Univariate Descriptive Statistics
 
@@ -261,19 +335,20 @@ describe(mydata)
     ## Level*                11 2878    3.07   0.82    3.0    3.19   0.00   1    4     3 -1.00     0.93  0.02
     ## BpQ                   12 2878    1.02   1.77    0.3    0.61   0.44   0   18    18  3.45    15.81  0.03
     ## StartTime             13  654 1336.39 264.01 1400.0 1341.22 296.52 800 1800  1000 -0.19    -0.71 10.32
-    ## DayText*              14  654    3.15   1.36    3.0    3.19   1.48   1    5     4 -0.13    -1.18  0.05
+    ## DayText*              14  654    3.00   1.34    3.0    2.99   1.48   1    5     4 -0.05    -1.18  0.05
+    ## LessonTime*           15  654    1.58   0.85    1.0    1.48   0.00   1    3     2  0.91    -0.99  0.03
 
 ``` r
 summary(mydata)
 ```
 
-    ##    ModuleCode        AcadYear   Semester Round        Quota           Bidders         LowestBid       LowestSuccessfulBid   HighestBid                                        StudentAcctType     Level           BpQ             StartTime         DayText    
-    ##  PL1101E: 230   2011/2012:460   1:1587   1A:640   Min.   :  1.00   Min.   :  0.00   Min.   :   0.00   Min.   :   0        Min.   :   0.0   New Students [P]                           : 319   Level 1: 230   Min.   : 0.00000   Min.   : 800   Friday   : 102  
-    ##  PL3232 : 134   2013/2014:449   2:1291   1B:386   1st Qu.:  4.00   1st Qu.:  1.00   1st Qu.:   1.00   1st Qu.:   1        1st Qu.:   1.0   NUS Students [G]                           : 135   Level 2: 182   1st Qu.: 0.02128   1st Qu.:1200   Monday   : 116  
-    ##  PL3236 : 121   2015/2016:423            1C:289   Median : 14.00   Median :  3.00   Median :   1.00   Median :   1        Median : 350.0   NUS Students [P, G]                        : 339   Level 3:1623   Median : 0.30000   Median :1400   Thursday : 159  
-    ##  PL3234 : 120   2014/2015:398            2A:419   Mean   : 25.09   Mean   : 12.38   Mean   :  69.39   Mean   : 251        Mean   : 718.1   NUS Students [P]                           : 336   Level 4: 843   Mean   : 1.01954   Mean   :1336   Tuesday  : 134  
-    ##  PL3235 : 119   2016/2017:349            2B:467   3rd Qu.: 32.00   3rd Qu.:  9.00   3rd Qu.:   8.00   3rd Qu.: 201        3rd Qu.:1232.8   Returning Students [P]                     :1231                  3rd Qu.: 1.25000   3rd Qu.:1575   Wednesday: 143  
-    ##  PL3233 : 117   2012/2013:345            3A:376   Max.   :430.00   Max.   :491.00   Max.   :2430.00   Max.   :3459        Max.   :4801.0   Returning Students [P] and NUS Students [G]: 171                  Max.   :18.00000   Max.   :1800   NA's     :2224  
+    ##    ModuleCode        AcadYear   Semester Round        Quota           Bidders         LowestBid       LowestSuccessfulBid   HighestBid                                        StudentAcctType     Level           BpQ             StartTime         DayText         LessonTime  
+    ##  PL1101E: 230   2011/2012:460   1:1587   1A:640   Min.   :  1.00   Min.   :  0.00   Min.   :   0.00   Min.   :   0        Min.   :   0.0   New Students [P]                           : 319   Level 1: 230   Min.   : 0.00000   Min.   : 800   Monday   : 116   Afternoon: 427  
+    ##  PL3232 : 134   2013/2014:449   2:1291   1B:386   1st Qu.:  4.00   1st Qu.:  1.00   1st Qu.:   1.00   1st Qu.:   1        1st Qu.:   1.0   NUS Students [G]                           : 135   Level 2: 182   1st Qu.: 0.02128   1st Qu.:1200   Tuesday  : 134   Evening  :  73  
+    ##  PL3236 : 121   2015/2016:423            1C:289   Median : 14.00   Median :  3.00   Median :   1.00   Median :   1        Median : 350.0   NUS Students [P, G]                        : 339   Level 3:1623   Median : 0.30000   Median :1400   Wednesday: 143   Morning  : 154  
+    ##  PL3234 : 120   2014/2015:398            2A:419   Mean   : 25.09   Mean   : 12.38   Mean   :  69.39   Mean   : 251        Mean   : 718.1   NUS Students [P]                           : 336   Level 4: 843   Mean   : 1.01954   Mean   :1336   Thursday : 159   NA's     :2224  
+    ##  PL3235 : 119   2016/2017:349            2B:467   3rd Qu.: 32.00   3rd Qu.:  9.00   3rd Qu.:   8.00   3rd Qu.: 201        3rd Qu.:1232.8   Returning Students [P]                     :1231                  3rd Qu.: 1.25000   3rd Qu.:1575   Friday   : 102                   
+    ##  PL3233 : 117   2012/2013:345            3A:376   Max.   :430.00   Max.   :491.00   Max.   :2430.00   Max.   :3459        Max.   :4801.0   Returning Students [P] and NUS Students [G]: 171                  Max.   :18.00000   Max.   :1800   NA's     :2224                   
     ##  (Other):2037   (Other)  :454            3B:301                                                                                            Returning Students and New Students [P]    : 347                                     NA's   :2224
 
 </details>
@@ -322,6 +397,10 @@ for(r in facnames.mod)
     ## Histogram Of DayText
 
 ![](README_files/figure-gfm/explore1-5.png)<!-- -->
+
+    ## Histogram Of LessonTime
+
+![](README_files/figure-gfm/explore1-6.png)<!-- -->
 
 ``` r
 # plot the continuous variables
@@ -427,29 +506,49 @@ for(r in 1:length(facnames.mod))
 
 ![](README_files/figure-gfm/explorecatcat-4.png)<!-- -->
 
-    ## Semester ~ Round
+    ## AcadYear ~ LessonTime
 
 ![](README_files/figure-gfm/explorecatcat-5.png)<!-- -->
 
-    ## Semester ~ Level
+    ## Semester ~ Round
 
 ![](README_files/figure-gfm/explorecatcat-6.png)<!-- -->
 
-    ## Semester ~ DayText
+    ## Semester ~ Level
 
 ![](README_files/figure-gfm/explorecatcat-7.png)<!-- -->
 
-    ## Round ~ Level
+    ## Semester ~ DayText
 
 ![](README_files/figure-gfm/explorecatcat-8.png)<!-- -->
 
-    ## Round ~ DayText
+    ## Semester ~ LessonTime
 
 ![](README_files/figure-gfm/explorecatcat-9.png)<!-- -->
 
-    ## Level ~ DayText
+    ## Round ~ Level
 
 ![](README_files/figure-gfm/explorecatcat-10.png)<!-- -->
+
+    ## Round ~ DayText
+
+![](README_files/figure-gfm/explorecatcat-11.png)<!-- -->
+
+    ## Round ~ LessonTime
+
+![](README_files/figure-gfm/explorecatcat-12.png)<!-- -->
+
+    ## Level ~ DayText
+
+![](README_files/figure-gfm/explorecatcat-13.png)<!-- -->
+
+    ## Level ~ LessonTime
+
+![](README_files/figure-gfm/explorecatcat-14.png)<!-- -->
+
+    ## DayText ~ LessonTime
+
+![](README_files/figure-gfm/explorecatcat-15.png)<!-- -->
 
 </details>
 
@@ -760,6 +859,34 @@ for(r in facnames.mod)
     ## DayText ~ StartTime
 
 ![](README_files/figure-gfm/exploreconcat-35.png)<!-- -->
+
+    ## LessonTime ~ Quota
+
+![](README_files/figure-gfm/exploreconcat-36.png)<!-- -->
+
+    ## LessonTime ~ Bidders
+
+![](README_files/figure-gfm/exploreconcat-37.png)<!-- -->
+
+    ## LessonTime ~ LowestBid
+
+![](README_files/figure-gfm/exploreconcat-38.png)<!-- -->
+
+    ## LessonTime ~ LowestSuccessfulBid
+
+![](README_files/figure-gfm/exploreconcat-39.png)<!-- -->
+
+    ## LessonTime ~ HighestBid
+
+![](README_files/figure-gfm/exploreconcat-40.png)<!-- -->
+
+    ## LessonTime ~ BpQ
+
+![](README_files/figure-gfm/exploreconcat-41.png)<!-- -->
+
+    ## LessonTime ~ StartTime
+
+![](README_files/figure-gfm/exploreconcat-42.png)<!-- -->
 
 </details>
 
