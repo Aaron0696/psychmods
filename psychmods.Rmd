@@ -15,6 +15,7 @@ output:
     theme: yeti
     toc: yes
     toc_float: yes
+    toc_depth: 3
     df_print: paged
     fig_width: 4
     fig_height: 4
@@ -51,8 +52,9 @@ library(DT)
 library(psych)
 library(corrplot)
 library(dplyr)
+library(lme4)
 options(width = 999)
-knitr::opts_chunk$set(dpi = 300, out.width = "50%", eval = FALSE)
+knitr::opts_chunk$set(dpi = 300, out.width = "50%", eval = TRUE)
 ```
 
 ## >>Bidding Data From `nusmods`
@@ -88,7 +90,7 @@ saveRDS(myBid, file = "myBid.RDS")
 ## >>Load `myBid.RDS`
 
 ```{r loadrds}
-myBid <- readRDS("mydata.RDS")
+myBid <- readRDS("myBid.RDS")
 ```    
 
 ## >Module Information
@@ -146,15 +148,9 @@ myModInfo <- readRDS("myModInfo.RDS")
 # only keep the Psychology modules information
 myModInfo <- subset(myModInfo,
                     str_detect(myModInfo$ModuleCode, "^PL"))
-```
-
-```{r filter1.1}
 # remove information about tutorials
 myModInfo <- subset(myModInfo,
                     myModInfo$LessonType != "TUTORIAL")
-```
-
-```{r filter1.2}
 # only keep these columns
 myModInfo <- myModInfo[,grep("ModuleCode|DayText|StartTime|Semester|AcadYear", names(myModInfo))]
 # remove duplicated rows based on columns of ModuleCode, Acadyear, Semester, StartTime and DayText
@@ -183,6 +179,10 @@ myBid <- subset(myBid,
 # remove the rounds where it was reserved
 myBid <- subset(myBid,
                 !str_detect(myBid$StudentAcctType, "Reserved"))
+
+# remove information from bidding rounds involving [G] accounts
+myBid <- subset(myBid,
+                !str_detect(myBid$StudentAcctType, "[G]"))
 
 # remove unneeded columns
 myBid <- myBid[, -grep("Group|Faculty", names(myBid))]
@@ -215,7 +215,7 @@ myBid$BpQ <- as.numeric(myBid$Bidders)/as.numeric(myBid$Quota)
 ```
 
 ```{r transform1.2}
-# create new column Bids Per Quota (BpQ)
+# create new column LessonTime
 myModInfo$LessonTime <- ifelse(as.numeric(myModInfo$StartTime) < 1200, "Morning",
                                ifelse(as.numeric(myModInfo$StartTime) > 1600, "Evening",
                                       "Afternoon"))
@@ -242,6 +242,15 @@ for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "Level", "StudentAcctT
 {
   mydata[,grep(r, names(mydata))] <- factor(mydata[,grep(r, names(mydata))])
 }
+```
+
+## Collapsing Across All Accounts
+
+```{r}
+# aggregate across all accounts within a round of bidding
+mydata <- aggregate(. ~ AcadYear + Semester + Round + ModuleCode + Level + StartTime + DayText + LessonTime,
+               data = mydata[,-grep("StudentAcctType", names(mydata))],
+               FUN = mean)
 ```
 
 ## >Vectors Of Column Names
@@ -434,19 +443,18 @@ for(r in facnames.mod)
 
 # Phase 5: Exploration
 
-```{r numods}
-# number of modules
-unique(mydata$ModuleCode)
-```
-
-```{r rowsmod}
-# number of rows belonging to each module
-xtabs(~ ModuleCode, data  = mydata, subset = NULL)
-```
-
 ```{r}
-# datatable(myBid, filter = "top")
-aggregate(BpQ ~ AcadYear + Semester + ModuleCode,
-          data = mydata,
-          FUN = mean)
+for(r in unique(mydata$ModuleCode))
+{
+  plot(
+    mydata %>%
+      filter(ModuleCode == r) %>%
+      ggplot(aes(x = StartTime, y = BpQ, color = Round)) +
+      geom_point() +
+      ggtitle(r) + 
+      facet_grid(~ DayText) +
+      theme_bw() + 
+      theme(axis.text.x = element_text(angle = 90, vjust = -0.3))
+  )
+}
 ```
