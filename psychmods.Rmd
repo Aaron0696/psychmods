@@ -4,7 +4,6 @@ author: "Aaron0696"
 output:
   html_document:
     fig_align: center
-    code_folding: show
     number_sections: false
     highlight: haddock
     theme: yeti
@@ -20,8 +19,8 @@ output:
     fig_width: 4
     fig_height: 4
 ---
-```{r rendering, eval = FALSE, include = FALSE}
-# for github
+```{r render, eval = FALSE, include = FALSE}
+# for github markdown
 rmarkdown::render(input = "psychmods.Rmd",
                   output_format = "github_document",
                   output_file = "README.md")
@@ -31,15 +30,15 @@ rmarkdown::render(input = "psychmods.Rmd",
                   output_file = "docs/index.html")
 ```
 
+# Introduction
+
 * Notes:
-    1. AY2017/2018 Semester 2, AY2018/2019 Semester 2, bidding data not available.
-    2. The bidding statistics are highly non-normal, likely due to being bounded by zero (they cannot bid negative points or have negative bidders). May consider using zero-inflated or poisson regression if considering these statistics as dependent variables.
+    1. AY2017/2018 Semester 2 and AY2018/2019 Semester 2 bidding data not available.
+    2. The bidding statistics are highly non-normal due to being bounded by zero (they cannot make negative bids or have negative bidders). May consider using zero-inflated or poisson regression if considering these statistics as dependent variables.
 
-# Phase 1: Setting Up Environment, Packages And Loading Data. {.tabset}
+# Phase 1: Setting Up Environment, Packages And Loading Data {.tabset}
 
-## >Packages And Options
-
-* Load packages.
+## Packages And Options
 
 ```{r setup, warning = FALSE, message = FALSE}
 library(semTools)
@@ -49,145 +48,176 @@ library(stringr)
 library(DT)
 library(psych)
 library(corrplot)
-library(dplyr)
+library(tidyverse)
 library(forcats)
 library(lme4)
-library(ggrepel)
+library(shiny)
+library(semTools)
+library(plotly)
 options(width = 999)
 knitr::opts_chunk$set(dpi = 300, out.width = "50%", eval = TRUE)
 ```
 
-## >>Bidding Data From `nusmods`
+## Load Bidding Data
 
-* Extract data from `nusmods` API at https://nusmods.com/api/.
-* CORS bidding data.
+* Extract data from `nusmods` at https://api.nusmods.com/.
+* After loading the data in `.JSON` format, convert to a dataframe.
 
 ```{r extract, eval=FALSE}
-# load bidding data
-# calculate loading times
-before <- Sys.time()
-# read data directly from URL
-myjson <- fromJSON(file = url("https://api.nusmods.com/corsBiddingStatsRaw.json"))
-# create empty dataframe which will act as a container to be populated with data
-myBid <- data.frame()
-# for each element in the myjson list, append it to myBid
-for(r in 1:length(myjson))
+myjson <- fromJSON(file = url("https://api.nusmods.com/corsBiddingStatsRaw.json")) # read data directly from URL
+myBid <- data.frame() # create empty dataframe which will act as a container to be populated with data
+for(r in 1:length(myjson)) # for each element in the myjson list, append it to myBid
 {
-  if(myjson[[r]]$Semester == 1 | myjson[[r]]$Semester == 2)
+  if(myjson[[r]]$Semester == 1 | myjson[[r]]$Semester == 2) # if semester 1 or 2
   {
-    myBid <- rbind(myBid, myjson[[r]])
+    myBid <- rbind(myBid, myjson[[r]]) # add to dataframe
   }
-  myjson[[r]] <- NA
+  myjson[[r]] <- NA # free up some RAM
 }
-# calculate loading time
-after <- Sys.time()
-after - before
 
-# save
-saveRDS(myBid, file = "myBid.RDS")
+saveRDS(myBid, file = "myBid.RDS") # save to directory
 ```
 
-## >>Load `myBid.RDS`
+### Load `myBid.RDS`
 
-```{r loadrds}
+* Downloading the data from the API using the code above takes a substantial amount of time.
+* I saved the downloaded data in `myBid.RDS` and load it directly from my local folder while I worked on the project.
+
+```{r loadbid}
 myBid <- readRDS("myBid.RDS")
 ```    
 
-## >Module Information
+## Load Module Information
+
+* Module information was scattered across different folders.
+* Used a loop to repeat the process of downloading and converting to dataframe across the different folders accessed by the different URLs.
+    * The same concept was used to consolidate information about the Module Titles.
 
 ```{r extract2, eval=FALSE}
-# create empty dataframe which will act as a container to be populated with data
-myModInfo <- data.frame()
-# looping through each year
-for(year in c(2011:2018))
+myModInfo <- data.frame() # create empty dataframe which will act as a container to be populated with data
+for(year in c(2011:2018)) # looping through each year
 {
   for(semester in c(1,2))
   {
     # create the url where data is to be extracted from
     myurl <- paste0("https://api.nusmods.com/", year, "-", year + 1, "/", semester, "/moduleTimetableDeltaRaw.json")
     myjson <- fromJSON(file = url(myurl))
-    
-    # for each element in the myjson list, append it to myModInfo
-    for(r in 1:length(myjson))
+    for(r in 1:length(myjson)) # for each element in the myjson list, append it to myModInfo
     {
-      if(isTRUE(str_detect(myjson[[r]]$ModuleCode, "^PL")))
+      if(isTRUE(str_detect(myjson[[r]]$ModuleCode, "^PL"))) # only keep info if module code begins with PL
       {
-        if(myjson[[r]]$Semester == 1 | myjson[[r]]$Semester == 2)
+        if(myjson[[r]]$Semester == 1 | myjson[[r]]$Semester == 2) # only get semester 1 and 2 information
         {
-          myModInfo <- rbind(myModInfo, myjson[[r]])
+          myModInfo <- rbind(myModInfo, myjson[[r]]) # add to dataframe
         }
       }
-      myjson[[r]] <- NA
+      myjson[[r]] <- NA # replace the element with NA to free up some rAM
     }
-    cat(year, "Semester", semester, "Done!")
+    cat(year, "Semester", semester, "Done!") # progress tracker
   }
 }
 
-# save
-saveRDS(myModInfo, file = "myModInfo.RDS")
+myTitles <- data.frame() # create empty dataframe which will act as a container to be populated with data
+for(year in c(2014:2018)) # looping through each year
+{
+    myurl <- paste0("https://api.nusmods.com/", year, "-", year + 1, "/moduleList.json") # create the url where data is to be extracted from
+    myjson <- fromJSON(file = url(myurl))
+    for(r in 1:length(myjson)) # for each element in the myjson list, append it to myModInfo
+    {
+      if(isTRUE(str_detect(myjson[[r]]$ModuleCode, "^PL"))) # only keep info if module code begins with PL
+      {
+        if(paste0(myjson[[r]]$Semester, collapse = "|") == "1"|
+           paste0(myjson[[r]]$Semester, collapse = "|") == "2"|
+           paste0(myjson[[r]]$Semester, collapse = "|") == "1|2") # only keep information from semester 1 and 2
+        {
+          myTitles <- rbind(myTitles, as.data.frame(myjson[[r]])) # add to dataframe
+        }
+      }
+      myjson[[r]] <- NA # free RAM
+    }
+}
+
+myModInfo <- myTitles %>% # add titles information to myModInfo
+  select(ModuleCode, ModuleTitle) %>% # select these two columns
+  filter(ModuleTitle != "Lab in Applied Psychology") %>%
+  distinct() %>% # remove duplicates
+  right_join(myModInfo, by = "ModuleCode") # left = myTitles, right = myModInfo
+
+saveRDS(myModInfo, file = "myModInfo.RDS") # save to directory
 ```
 
-## >>Load `myModInfo.RDS`
+### Load `myModInfo.RDS`
 
-```{r loadrds2}
+* Downloading the data from the API using the code above takes a substantial amount of time.
+* I saved the downloaded data in `myModInfo.RDS` and load the data directly while I worked on the project.
+
+```{r loadmod}
 myModInfo <- readRDS("myModInfo.RDS")
 ```
 
-# Phase 2: Filter, Transform And Merge Data {.tabset}
+# Phase 2: Filter, Transform And Merge {.tabset}
     
-## >`myModInfo`
+## Module Information
 
-* Filter Module Information, `myModInfo`.
+* Filter information from the dataframe `myModInfo`.
     * Removing non-Psychology modules.
-    * Removing tutorial information.
+    * Removing modules without module titles, these are modules that appeared before AY2014/2015 and never resurfaced afterwards.
+    * Removing information about tutorials.
 
-### >>Filter
+### Filter
 
-```{r filter1}
+```{r filtermod}
 myModInfo <- myModInfo %>%
-  select(-LastModified, -LastModified_js, -isDelete) %>%
-  distinct() %>%
-  filter(str_detect(ModuleCode, "^PL")) %>%
-  filter(LessonType != "TUTORIAL") %>%
-  select(AcadYear, Semester, ModuleCode, DayText, StartTime, Semester)
+  select(-LastModified, -LastModified_js, -isDelete) %>% # remove these columns
+  filter(str_detect(ModuleCode, "^PL")) %>% # removing non-Psychology modules
+  filter(!is.na(ModuleTitle)) %>% # removing modules without module titles #PL3285, PL4220, PL4217
+  filter(LessonType != "TUTORIAL") %>% # removing information about tutorials
+  select(AcadYear, Semester, ModuleCode, ModuleTitle, DayText, StartTime, Semester) %>% # select these columns
+  distinct() # remove duplicates
 
-head(myModInfo)
+head(myModInfo) # peek
 ```  
     
-## >`myBid`
+## Bidding Information `myBid`
 
-* Filter CORS Bidding Information, `myBid`.
-    * Removing non-Psychology modules, including Roots and Wings (PLS) and Psychology for non-Psychology students (PLB).
-    * Removing information from reserved modules.
+* Filter information from the dataframe `myBid`.
+    * Removing non-Psychology modules, including Roots and Wings (prefixed with PLS-) and Psychology for non-Psychology students (prefixed with PLB-).
+    * Removing information from quotas that are reserved and not available for bidding.
     * Removing information from modules with more than one lecture/seminar session.
+    * Removing bidding information from non-psychology students.
 
-### >>Filter
+### Filter
 
-```{r filter2}
+```{r filterbid}
 myBid <- myBid %>%
-  filter(str_detect(ModuleCode, "^PL")) %>%
-  filter(!str_detect(ModuleCode, "PLS|PLB")) %>%
-  filter(!str_detect(StudentAcctType, "Reserved")) %>%
-  filter(!str_detect(StudentAcctType, "[G]")) %>%
-  filter(!str_detect(paste0(unique(myBid$ModuleCode[grep("2",myBid$Group)]), collapse = "|"), ModuleCode)) %>%
-  select(-Faculty, -Group)
+  filter(str_detect(ModuleCode, "^PL")) %>% # removing non-Psychology modules
+  filter(!str_detect(ModuleCode, "PLS|PLB")) %>% # remove PLS and PLB modules
+  filter(!str_detect(StudentAcctType, "Reserved")) %>% # remove reserved rounds
+  filter(!str_detect(StudentAcctType, "[G]")) %>% # remove bidding information from non-psychology students
+  filter(!str_detect(paste0(unique(myBid$ModuleCode[grep("2",myBid$Group)]), collapse = "|"), ModuleCode)) %>% # remove modules that have more than one lecture
+  select(-Faculty, -Group) # remove these columns
 
-head(myBid)
+head(myBid) # peek
 ```
 
-### >> Merge
+## Merge
 
 * Combine the information of `myModInfo` and `myBid`.
 
 ```{r merge}
-# note: there is only module information from AY2016/17 onwards
-# all data before that period will be dropped
+# modules that do not appear in both dataframes are dropped
 mydata <- inner_join(myBid, 
-                    myModInfo,
-                    by = c("ModuleCode", "AcadYear", "Semester"))
+                     myModInfo,
+                     by = c("ModuleCode", "AcadYear", "Semester"))
 ```
 
-## >Coercing Columns To Factors/Numeric
+# Phase 3: Data Wrangling {.tabset}
+
+* The variables available in the original data are useful but they are too specific to interpret meaningfully.
+* This section creates new variables based on the original data and allow us to better discern any trend in the data.
+* Also includes additional wrangling and manipulations to ease the plotting of graphs and analysis later.
+
+## Coercing Columns
 
 ```{r transform2}
 # transform these columns to numeric
@@ -196,43 +226,68 @@ for(r in c("Quota", "Bidders", "LowestBid", "LowestSuccessfulBid", "HighestBid",
   mydata[,grep(r, names(mydata))] <- as.numeric(mydata[,grep(r, names(mydata))])
 }
 # transform these columns to factors
-for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "StudentAcctType", "DayText"))
+for(r in c("AcadYear", "Semester", "ModuleCode", "Round", "StudentAcctType", "DayText", "StudentAcctType", "ModuleTitle"))
 {
   mydata[,grep(r, names(mydata))] <- factor(mydata[,grep(r, names(mydata))])
 }
 ```
 
-## >Vectors Of Column Names
-
-```{r colvecs}
-# create vector of the column names which are factors
-facnames <- names(select_if(mydata, is.factor))
-# factor names without ModuleCode and StudentAcctType
-facnames.mod <- facnames[-grep("ModuleCode", facnames)]
-# create vector of the column names which are numeric
-numnames <- names(select_if(mydata, is.numeric))
-# numeric names without StartTime
-numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numnames)]
-```
-
-## >Rearranging `DayText` Levels
+## Rearranging `DayText` Levels
 
 ```{r daytext}
 mydata$DayText <- factor(mydata$DayText,
                          levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday"))
 ```
 
-## >Shortening `StudentAcctType` Levels
+## Shortening `StudentAcctType` Levels
 
 ```{r shortacct}
 mydata <- mutate(mydata, StudentAcctType = fct_recode(StudentAcctType, 
-                                            "New[P]" = "New Students [P]",
-                                            "NUS[P]" = "NUS Students [P]",
-                                            "Return[P]" = "Returning Students [P]",
-                                            "ReturnNew[P]" = "Returning Students and New Students [P]"))
+                                                      "New[P]" = "New Students [P]",
+                                                      "NUS[P]" = "NUS Students [P]",
+                                                      "Return[P]" = "Returning Students [P]",
+                                                      "ReturnNew[P]" = "Returning Students and New Students [P]"))
 ```
 
-# Phase 3: Data Diagnostics {.tabset}
+## New Variable: Level
+
+```{r create1}
+# create new variable that indicates the level of the module, based on their module code
+mydata$Level <- factor(ifelse(str_detect(mydata$ModuleCode, "1[0-9][0-9][0-9]"), "Level 1",
+                      ifelse(str_detect(mydata$ModuleCode, "2[0-9][0-9][0-9]"), "Level 2",
+                             ifelse(str_detect(mydata$ModuleCode, "3[0-9][0-9][0-9]"), "Level 3",
+                                    ifelse(str_detect(mydata$ModuleCode, "4[0-9][0-9][0-9]"), "Level 4", 
+                                           "Graduate Module")))))
+```
+
+## New Variable: BidPerQuota
+
+```{r create2}
+# BidPerQuota = Bidders/Quota
+mydata$BidPerQuota <- with(mydata, Bidders/Quota)
+```
+
+## New Variable: DayPeriod
+
+```{r create3}
+mydata$Period <- factor(ifelse(mydata$StartTime < 1200, "Morning", ">=Afternoon"),
+                           levels = c("Morning", ">=Afternoon"))
+```
+
+## Vector Of Column Names
+
+```{r colvecs}
+# create vector of the column names which are factors
+facnames <- mydata %>% select_if(is.factor) %>% names()
+# facnames without ModuleCode and StudentAcctType
+facnames.mod <- facnames[-grep("ModuleCode|ModuleTitle", facnames)]
+# create vector ofthe column names which are numeric
+numnames <- mydata %>% select_if(is.numeric) %>% names()
+# numnames without StartTime
+numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numnames)]
+```
+
+# Phase 4: Data Diagnostics {.tabset}
 
 * Plot univariate histograms and bivariate plots using loops for **almost every** combination of variables.
 * The graphs from this section are predominantly for diagnostics rather than exploration, what I mean is that the graphs from this section would make little sense if one tried to draw insights from them. This is because they are aggregated across all other variables.
@@ -242,48 +297,46 @@ mydata <- mutate(mydata, StudentAcctType = fct_recode(StudentAcctType,
 ## Univariate Descriptive Statistics
 
 ```{r unides}
-describe(mydata)
+str(mydata)
+select(describe(mydata), n, mean, sd, median, min, max, skew, kurtosis)
 ```
 
-```{r unisum}
-summary(mydata)
-```
+## Univariate Histograms/Boxplots {.tabset}
 
-## Univariate Histograms/Boxplots
+* Plots to illustrate the frequency/distribution of variables.
+
+### Categorical Variables
 
 ```{r explore1, warning = FALSE}
 # plot the categorical variables
-# note: I did not include ModuleCode in this exploratory graph because it has too many levels (83)
 for(r in facnames.mod)
 {
-  cat(paste0("Histogram Of ", r))
-  
   plot(
     ggplot(data = mydata, aes_string(x = r, fill = r)) + 
       geom_histogram(stat = "count") + 
       ylab("Count") +
       ggtitle(paste0("Count of ", r)) +
       theme_classic() + 
-      theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3),
+      theme(axis.text.x = element_text(angle = 90),
             axis.title.x = element_blank(),
             legend.position = "none")
   )
 }
 ```
 
+### Continuous Variables
+
 ```{r explore2, warning = FALSE}
 # plot the continuous variables
 for(r in numnames)
 {
-  cat(paste0("Boxplots Of ", r))
-  
   plot(
     ggplot(data = mydata, aes_string(x = r, fill = r)) + 
-      geom_boxplot(fill = "violetred", alpha = 0.5) + 
+      geom_histogram(fill = "violetred", alpha = 0.5, bins = 50) + 
       ylab("Histogram") +
       ggtitle(paste0(r)) +
       theme_classic() + 
-      theme(axis.text.x = element_text(angle = 90, size = 6, vjust = -0.3),
+      theme(axis.text.x = element_text(angle = 90),
             axis.title.x = element_text())
   )
 }
@@ -291,24 +344,20 @@ for(r in numnames)
 
 ## Bivariate Plots {.tabset}
 
+* Plots to illustrate pairwise relationships amongst variables.
+
 ### Categorical-Categorical
 
 ```{r explorecatcat, warning = FALSE}
-# create vector to loop across
-for(r in 1:length(facnames.mod))
+for(r in 1:length(facnames.mod)) # loop across all factors
 {
-  for(i in 1:length(facnames.mod))
+  for(i in 1:length(facnames.mod)) # inner loop
   {
-    # dont do anything if they are the same or the graph has been made before
-    if(i == r | i < r)
-    {
+    if(i == r | i < r) 
+    { # dont do anything if they are the same or the graph has been made before
     } else {
-      cat(paste0(facnames.mod[r]," ~ ",facnames.mod[i]))
-      
-      # create formula for xtabs
-      tempform <- paste0("~ ", facnames.mod[r], " + ", facnames.mod[i])
-      # temp is a dataframe that is only going to exist in this section
-      # and overwritten with each loop
+      tempform <- paste0("~ ", facnames.mod[r], " + ", facnames.mod[i])  # create formula for xtabs
+      # temp is a dataframe that is only going to exist in this section and overwritten with each loop
       temp <- as.data.frame(xtabs(eval(parse(text = tempform)),
                                   data = mydata,
                                   subset = NULL))
@@ -318,7 +367,7 @@ for(r in 1:length(facnames.mod))
           geom_text() + 
           scale_fill_gradient(low = "white", high = "violetred") + 
           theme_minimal() + 
-          theme(axis.text.x = element_text(angle = 90, vjust = -0.3),
+          theme(axis.text.x = element_text(angle = 90),
                 legend.position = "none")
       )
     }
@@ -329,25 +378,21 @@ for(r in 1:length(facnames.mod))
 ### Continuous-Continuous
 
 ```{r exploreconcon, warning = FALSE}
-for(r in 1:length(numnames))
+for(r in 1:length(numnames)) # loop across all numeric columns
 {
-  for(i in 1:length(numnames))
+  for(i in 1:length(numnames)) # inner loop
   {
-    # dont do anything if they are the same or the graph has been made before
     if(i == r | i < r)
-    {
+    { # dont do anything if they are the same or the graph has been made before
     } else {
-      cat(paste0(numnames[r]," ~ ",numnames[i]))
-      # create formula for lm()
-      tempform.std <- paste0("scale(", numnames[i],")", " ~ ", "scale(", numnames[r], ")")
-      tempform <- paste0(numnames[i], " ~ ", numnames[r])
+      # create formulas for lm()
+      tempform.std <- paste0("scale(", numnames[i],")", " ~ ", "scale(", numnames[r], ")") # standardized
+      tempform <- paste0(numnames[i], " ~ ", numnames[r]) # unstandardized
       # regress to get best fit line
-      # standardized
       stdreg <- lm(eval(parse(text = tempform.std)),
-                   data = mydata)
-      # unstandardized
+                   data = mydata) # standardized
       reg <- lm(eval(parse(text = tempform)),
-                data = mydata)
+                data = mydata) # unstandardized
       
       plot(
         ggplot(data = mydata, aes_string(x = numnames[r], y = numnames[i])) +
@@ -357,126 +402,230 @@ for(r in 1:length(numnames))
           geom_label(aes(x = Inf, y = Inf, label = paste0("Standardized Regression Coefficient = ",
                                                           round(stdreg$coefficients[2],3)),
                          hjust = 1, vjust = 2)) + 
-          theme(axis.text.x = element_text(angle = 90, vjust = -0.3))
+          theme(axis.text.x = element_text(angle = 90))
       )
     }
   }
 }
 ```
 
+### Continuous-Categorical
+
+```{r exploreconcat, warning = FALSE}
+for(r in facnames.mod) # loop across all factor columns
+{
+  for(i in numnames) # inner loop across all numeric columns
+  {
+    plot(
+      ggplot(data = mydata, aes_string(x = r, y = i, fill = r)) + 
+        geom_boxplot() + 
+        theme_classic() + 
+        theme(legend.position = "none",
+              axis.text.x = element_text(angle = 90))
+    )
+  }
+}
+```
+
 ### Correlation Matrix
 
-```{r corrmatrix, fig.width = 4, fig.height = 4}
-corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(mydata))]),
+```{r corrmatrix}
+corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(mydata))]), # only get the numeric columns
                upper = "color",
                tl.pos = "lt",
                tl.cex = 0.5,
                cl.cex = 0.5)
 ```
 
-### Continuous-Categorical
+# Phase 5: Answering Questions
 
-```{r exploreconcat, warning = FALSE}
-for(r in facnames.mod)
+> Is it true that it is easier to bid for a module in the morning?
+
+> Do bids become higher as the rounds get later?
+
+## Most/Least Popular Level 4 Module {.tabset}
+
+> What are the most and least popular modules?
+
+### Lowest Successful Bid
+
+```{r lsb, out.height = "60%"}
+ggplotly(
+  mydata %>%
+  filter(Level ==  "Level 4") %>%
+  filter(Round == "1A") %>%
+  group_by(ModuleCode, ModuleTitle) %>%
+  summarize(LSB.avg.sem.years = mean(LowestSuccessfulBid)) %>%
+  ungroup() %>%
+  mutate(ModuleCode = fct_reorder(ModuleCode, LSB.avg.sem.years)) %>%
+  ggplot(mapping = aes(x = ModuleCode, y = LSB.avg.sem.years, label = ModuleTitle, fill = LSB.avg.sem.years)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme_classic() +
+  theme(legend.position = "none")
+, tooltip = c("x", "label", "y")
+, height = 600, width = 400
+)
+```
+
+### BPQ
+
+```{r bpq, out.height = "60%"}
+ggplotly(
+  mydata %>%
+  filter(Level ==  "Level 4") %>%
+  filter(Round == "1A") %>%
+  group_by(ModuleCode, ModuleTitle) %>%
+  summarize(BPQ.avg.sem.years = mean(BidPerQuota)) %>%
+  ungroup() %>%
+  mutate(ModuleCode = fct_reorder(ModuleCode, BPQ.avg.sem.years)) %>%
+  ggplot(mapping = aes(x = ModuleCode, y = BPQ.avg.sem.years, label = ModuleTitle, fill = BPQ.avg.sem.years)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme_classic() +
+  theme(legend.position = "none")
+, tooltip = c("x", "label", "y")
+, height = 600, width = 400
+)
+```
+
+### Quota
+
+```{r quota, out.height = "60%"}
+ggplotly(
+  mydata %>%
+  filter(Level ==  "Level 4") %>%
+  filter(Round == "1A") %>%
+  group_by(ModuleCode, ModuleTitle) %>%
+  summarize(quota.avg.sem.years = mean(Quota)) %>%
+  ungroup() %>%
+  mutate(ModuleCode = fct_reorder(ModuleCode, quota.avg.sem.years)) %>%
+  ggplot(mapping = aes(x = ModuleCode, y = quota.avg.sem.years, label = ModuleTitle, fill = quota.avg.sem.years)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  theme_classic() +
+  theme(legend.position = "none")
+, tooltip = c("x", "label", "y")
+, height = 600, width = 400
+)
+```
+
+## Do less people bid for a module if the lecture begins in the morning (before 12pm)?
+
+Lets look at each module and compare the average **number of bidders**, **bidders per quota** and **lowest successful bids** when the lecture begins in and after the morning.
+
+### By Module
+
+```{r bymod, fig.width = 15, fig.height = 15, out.height = "90%", out.width = "90%"}
+for(r in c("meanBidders", "meanBpQ", "meanLSB"))
 {
-  for(i in numnames)
-  {
-    cat(paste0(r," ~ ",i))
-    # graph
-    plot(
-      ggplot(data = mydata, aes_string(x = r, y = i, fill = r)) + 
-        geom_boxplot() + 
-        theme_classic() + 
-        theme(legend.position = "none",
-              axis.text.x = element_text(angle = 90, vjust = -0.3))
-    )
-  }
+  plot(mydata %>%
+    group_by(ModuleCode, ModuleTitle, Period) %>%
+    summarise(meanBidders = mean(Bidders), meanBpQ = mean(BidPerQuota), meanLSB = mean(LowestSuccessfulBid),
+              sdBidders = sd(Bidders), sdBpQ = sd(BidPerQuota), sdLSB = mean(LowestSuccessfulBid)) %>%
+    ggplot(aes_string(x = "Period", y = r, fill = "Period")) +
+    geom_bar(stat = "identity") +
+    theme_classic() +  
+    theme(axis.text.x = element_blank(), 
+          legend.position = "top",
+          strip.background = element_rect(fill = "grey30", linetype = "blank"),
+          strip.text = element_text(color = "white", size = 9)) + 
+    facet_wrap(~ ModuleCode:ModuleTitle, labeller = label_wrap_gen(width = 25)) +
+    ggtitle(r))
 }
 ```
 
-# Phase 4: Creation Of New Variables
+### By Level
 
-## Create New Variables {.tabset}
-
-### `Level`
-
-```{r create1}
-# create new variable that indicates the level of the module, based on their module code
-mydata$Level <- ifelse(str_detect(mydata$ModuleCode, "1[0-9][0-9][0-9]"), "Level 1",
-                      ifelse(str_detect(mydata$ModuleCode, "2[0-9][0-9][0-9]"), "Level 2",
-                             ifelse(str_detect(mydata$ModuleCode, "3[0-9][0-9][0-9]"), "Level 3",
-                                    ifelse(str_detect(mydata$ModuleCode, "4[0-9][0-9][0-9]"), "Level 4", 
-                                           "Graduate Module"))))
+```{r bylevel}
+for(r in c("meanBidders", "meanBpQ", "meanLSB"))
+{
+  plot(mydata %>%
+    group_by(Level, Period) %>%
+    summarise(meanBidders = mean(Bidders), meanBpQ = mean(BidPerQuota), meanLSB = mean(LowestSuccessfulBid),
+              sdBidders = sd(Bidders), sdBpQ = sd(BidPerQuota), sdLSB = mean(LowestSuccessfulBid)) %>%
+    ggplot(aes_string(x = "Period", y = r, fill = "Period")) +
+    geom_bar(stat = "identity") +
+    theme_classic() +  
+    theme(axis.text.x = element_blank(), 
+          legend.position = "top",
+          strip.background = element_rect(fill = "grey30", color = "black"),
+          strip.text = element_text(color = "white", size = 12)) + 
+    facet_wrap(~ Level) +
+    ggtitle(r))
+}
 ```
 
-### `Bidders Per Quota`
+### Bonus: Multilevel Modeling
 
-```{r create2}
-# for each module, calculate the total quota and total number of bidders across rounds
-mydata <- mydata %>%
-  group_by(ModuleCode, AcadYear, Semester, StartTime, DayText, Level) %>%
-  summarise(sumQuota = sum(Quota), sumBidders = sum(Bidders)) %>%
-  mutate(BidPerQuota = sumBidders/sumQuota)
-```
+#### Removal Of Modules With...{.tabset}
 
-## Removal Of Modules {.tabset}
-
-### With Less Than 3 Iterations
+##### Less Than 3 Instances
 
 ```{r}
-mydata <- mydata %>% 
+mymlm <- mydata %>%
   group_by(ModuleCode) %>%
   filter(n() >= 3)
 ```
 
-### No Variability In `StartTime`
+##### With No Variability In `StartTime`
 
 ```{r}
-# remove those with no variability in StartTime
-mydata <- mydata %>%
+# # remove those with no variability in StartTime
+mymlm <- mydata %>%
   group_by(ModuleCode) %>%
   mutate(sdBpQ = sd(BidPerQuota), sdStartTime = sd(StartTime)) %>%
   filter(sdStartTime > 0) %>%
   arrange(sdBpQ)
 ```
 
-## Relevant Statistics About Data
-
-### Number Of Iterations Per Module
+##### Hours From 12am `Hrs12` And Group-Mean Centered `Hrs12`.
 
 ```{r}
-mydata %>% 
+mymlm <- mymlm %>% 
+  mutate(Hrs12 = StartTime/100) %>%
   group_by(ModuleCode) %>%
-  tally() %>%
-  arrange(n)
+  arrange()
 ```
 
-### Per Module (BPQ ~ StartTime)
-
-```{r, fig.width = 7, fig.height = 7}
-for(r in unique(mydata$ModuleCode))
-{
-  plot(
-    mydata %>%
-      filter(ModuleCode == r) %>%
-      ggplot(aes(x = StartTime, y = BidPerQuota, color = Semester, label = AcadYear)) +
-      geom_label_repel(fill = "black") + 
-      geom_point() + 
-      ggtitle(r) +
-      theme_bw() +  
-      theme(axis.text.x = element_text(angle = 90, vjust = -0.3), 
-            legend.position = "none") + 
-      xlim(c(800,1800)) + 
-      ylim(c(0,15)) + 
-      geom_vline(xintercept = 1200, color = "violetred", lty = "dashed") +
-      geom_vline(xintercept = 1700, color = "darkblue", lty = "dashed")
-  )
-}
-```
-
-## Datatable
+##### Peek Data
 
 ```{r}
-datatable(mydata)
+head(mymlm)
 ```
+
+#### Models
+
+##### Baseline Model
+
+```{r, eval = FALSE}
+fit0 <- lmer(BidPerQuota ~ 1 + (1 | ModuleCode),
+     data = mymlm)
+VarCorr(fit0)
+
+(0.3672^2)/((0.3672^2) + (0.67259^2))
+```
+
+##### With Hrs12.gmc
+
+```{r, eval = FALSE}
+fit1 <- lmer(avgLSB ~ Level*Hrs12.gmc + (1 | ModuleCode),
+     data = mymlm)
+summary(fit1)
+car::Anova(fit1)
+```
+
+## Do results from previous rounds...
+
+```{r}
+head(mydata)
+
+a <- mydata %>%
+  pivot_wider(names_from = Round,
+         values_from = BidPerQuota
+         )
+
+```
+
+## are there dumping
 
