@@ -32,11 +32,62 @@ rmarkdown::render(input = "psychmods.Rmd",
 
 # Introduction
 
+My favourite part of university education was the autonomy to choose our modules. Excluding core and other compulsory modules, we were frequently spoiled for choice when it came to the electives. But this freedom came at a cost, we needed to bid for our modules instead of them being handed to us. The bidding system (**CORS**) was created by NUS to cope with the reality that some modules would be in higher demand, yet there is a limited supply of lecturers for the topic. Students had to carefully ration their limited bid points, which were used to win auctions for desired modules. Do you go all-in on an extremely popular module and be stuck with no points to bid for the remaining modules? Or spread the risk and bid moderately on multiple modules that align with your interest?  
+  
+Inadvertently, we began to observe, hypothesize and act on certain **trends** to guide and maximize our bidding choices. We might even share advices based on these trends. For example:
+
+> Modules belonging to the domain of Clinical Psychology are the most popular, so you need to plan ahead and stockpile points from previous semesters if you plan on bidding for them.
+
+This advice originated from numerous seniors and I even gave this advice to my juniors. I also became more convinced after observing peers griefing over their inability to secure a place in `Introduction to Counselling Psychology` or `Psychological Therapies` due to the exhorbitant amount of points required (which required students to stockpile points from previous semesters). But I have never heard anyone claiming that they really wanted to study `Cognitive Neuroscience` but failed to bid for it.
+
+But is it really true that Clinical Psychology modules are the most popular? Rather than basing our advices on personal anecdotes and  observation, do we have **data** to support this claim? The answer is *yes*! Bidding and module data are available at https://nusmods.com/api/. Thanks to the team at NUSMods (https://nusmods.com/team) who created a great timetabling tool for all NUS students.
+
+I downloaded, extracted, transform, analysis and visualized the information using R. The codes are available at github. The github repository contains extracted data for all modules from different majors and faculty but I will focus only on the Psychology modules in this post as I am more familiar with the Psychology department.
+
+# What Are The Most Popular Modules
+
+Are Clinical Psychology modules really the most popular? Lets see if the most popular modules do belong to Clinical Psychology. First, we would need some way to measure popularity. Luckily, the bidding statistics provides a few indicators of popularity. Lets start by defininig a popular module as possessing the following characteristic in Round 1A:
+
+1) Maximum quota available for bidding.
+    * Some background on the bidding system is needed. Round 1A is officially the first round of bidding but there is a *Module Preference Exercise* before Round 1A. In this exercise, all students declare the modules that they wish to study. 
+        * When the total number of students that wish to study a particular module is less than the quota, then these students will simply be allocated that module for free. The remaining quota will be up for bidding in Round 1A. 
+        * If the number of interested students exceed the quota, no students will be pre-allocated the module and the module will be put up for bidding in Round 1A with all quotas intact. We expect popular modules to fall into this scenario, thus their quota in Round 1A should be at a maximum.
+2) Number of bidders exceed the quota.
+3) Higher lowest successful bid. 
+    * The lowest successful bid is the lowest bid that wins the auction, anyone who bid below that amount will not be allocated the module.
+4) Higher number of bidders relative to the quota available.
+
+These indicators were presented sequentially to indicate the reasoning that I will be using to shortlist the most popular modules. I will eliminate modules that do not fit the criteria set out in 1) and 2). 3) and 4) will be used as tiebreakers for modules that fulfil both 1) and 2).
+
+Also, I will separately analyse the level 3 and level 4 modules.
+
+# Trends
+
+I selected three more trends to investigate.
+
+> There used to be a time when Clinical Psychology modules were not popular.
+
+I mentioned that there was a perceived trend that Clinical Psychology modules were really popular, but I recently met a few slightly more senior seniors in the workforce (who graduated almost a decade ago). They told me, much to my surprise, that Clinical Psychology was pretty unpopular back in their days. Was this supported by the data?
+
+> A module is less popular when the lecture is early in the day.
+
+Lessons at 8am were painful, I live somewhere in the North-East so I would have to wake up somewhere around 6.15am to arrive comfortably for 8am lessons (including time taken for the shuttle bus in NUS). I generalized from my personal opinion to form this myth, that 8am lessons would be less popular compared to their later counterparts. My friends generally shared the same sentiments, but was it reflected in the bidding statistics? Or are we projecting our laziness to other students?
+
+> Module bidding became more competitive in later cohorts, you should bid some amount higher than previous winning bids to account for the inflation in points caused by the increased competitiveness.
+
+Almost everyone checks the bidding statistics from previous iterations of the module to estimate the amount of points to bid. Of course, there should be a positive correlation between past and future bidding statistics but would it be recommended to **anchor** your bids onto the lowest successful bids from the past? If so, how much higher or lower should we bid compared to previous iterations? There are a few hypothesized reasons for the increased competitiveness, such as the cohort expanding but module quotas remanining constant. Or the tendency for students to always bid some points higher than previous winning bids, which leads to this upward cycle of bid point inflation. Does bid point inflation really exist?
+
+# Myth 1: Modules belonging to the domain of Clinical or Social Psychology are the most popular.
+
+First thing
+
+
+
 * Notes:
     1. AY2017/2018 Semester 2 and AY2018/2019 Semester 2 bidding data not available.
     2. The bidding statistics are highly non-normal due to being bounded by zero (they cannot make negative bids or have negative bidders). May consider using zero-inflated or poisson regression if considering these statistics as dependent variables.
 
-# Phase 1: Setting Up Environment, Packages And Loading Data {.tabset}
+# Phase 1: Setting Up Environment, Packages And Loading Data {.tabset .tabset-fade}
 
 ## Packages And Options
 
@@ -55,7 +106,7 @@ library(shiny)
 library(semTools)
 library(plotly)
 options(width = 999)
-knitr::opts_chunk$set(dpi = 300, out.width = "50%", eval = TRUE)
+knitr::opts_chunk$set(dpi = 300, out.width = "50%", eval = FALSE)
 ```
 
 ## Load Bidding Data
@@ -155,7 +206,7 @@ saveRDS(myModInfo, file = "myModInfo.RDS") # save to directory
 myModInfo <- readRDS("myModInfo.RDS")
 ```
 
-# Phase 2: Filter, Transform And Merge {.tabset}
+# Phase 2: Filter, Transform And Merge {.tabset .tabset-fade}
     
 ## Module Information
 
@@ -211,7 +262,7 @@ mydata <- inner_join(myBid,
                      by = c("ModuleCode", "AcadYear", "Semester"))
 ```
 
-# Phase 3: Data Wrangling {.tabset}
+# Phase 3: Data Wrangling {.tabset .tabset-fade}
 
 * The variables available in the original data are useful but they are too specific to interpret meaningfully.
 * This section creates new variables based on the original data and allow us to better discern any trend in the data.
@@ -287,7 +338,7 @@ numnames <- mydata %>% select_if(is.numeric) %>% names()
 numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numnames)]
 ```
 
-# Phase 4: Data Diagnostics {.tabset}
+# Phase 4: Data Diagnostics {.tabset .tabset-fade}
 
 * Plot univariate histograms and bivariate plots using loops for **almost every** combination of variables.
 * The graphs from this section are predominantly for diagnostics rather than exploration, what I mean is that the graphs from this section would make little sense if one tried to draw insights from them. This is because they are aggregated across all other variables.
@@ -301,7 +352,7 @@ str(mydata)
 select(describe(mydata), n, mean, sd, median, min, max, skew, kurtosis)
 ```
 
-## Univariate Histograms/Boxplots {.tabset}
+## Univariate Histograms/Boxplots {.tabset .tabset-fade .tabset-pills}
 
 * Plots to illustrate the frequency/distribution of variables.
 
@@ -342,7 +393,7 @@ for(r in numnames)
 }
 ```
 
-## Bivariate Plots {.tabset}
+## Bivariate Plots {.tabset .tabset-fade .tabset-pills}
 
 * Plots to illustrate pairwise relationships amongst variables.
 
@@ -439,13 +490,27 @@ corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(myd
 
 # Phase 5: Answering Questions
 
-> Is it true that it is easier to bid for a module in the morning?
+## Most/Least Popular Level 4 Module {.tabset .tabset-fade .tabset-pills}
 
-> Do bids become higher as the rounds get later?
+### Quota At Round 1A
 
-## Most/Least Popular Level 4 Module {.tabset}
-
-> What are the most and least popular modules?
+```{r quota1a, out.height = "90%", fig.width = 12}
+    mydata %>%
+  filter(Level ==  "Level 4") %>%
+  filter(Round == "1A") %>%
+filter(Quota >= 40) %>%
+  filter(BidPerQuota > 1) %>%
+  arrange(-LowestSuccessfulBid) %>%
+  ggplot(mapping = aes(y = ModuleCode, x = AcadYear, fill = LowestSuccessfulBid, label = ModuleTitle)) +
+  geom_tile(show.legend = TRUE) +
+  theme_classic() +
+  facet_wrap(~ Semester, ncol = 2) + 
+  theme(axis.text.x = element_text(angle = 90), 
+          legend.position = "top",
+          strip.background = element_rect(fill = "grey30", linetype = "blank"),
+          strip.text = element_text(color = "white", size = 12)) + 
+  scale_fill_gradient(low = "grey90", high = "red")
+```
 
 ### Lowest Successful Bid
 
@@ -529,8 +594,8 @@ for(r in c("meanBidders", "meanBpQ", "meanLSB"))
     theme(axis.text.x = element_blank(), 
           legend.position = "top",
           strip.background = element_rect(fill = "grey30", linetype = "blank"),
-          strip.text = element_text(color = "white", size = 9)) + 
-    facet_wrap(~ ModuleCode:ModuleTitle, labeller = label_wrap_gen(width = 25)) +
+          strip.text = element_text(color = "white", size = 12)) + 
+    facet_grid(~ ModuleCode:ModuleTitle, labeller = label_wrap_gen(width = 25)) +
     ggtitle(r))
 }
 ```
