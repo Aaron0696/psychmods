@@ -1206,7 +1206,7 @@ anim_save("labgif.gif")
 
 Impressively, `Lab in Social Psychology` never lost its top spot since 2010 but its *LSB* has fallen since its absurdly high *LSB* of ~1600 in 2012/2013 Semester 1. There were even two semesters where the module was worth less than 100 bid points but it experienced a rise in recent years.
 
-```{r lablsbbytime, out.width = "50%", out.height = "50%", fig.hold = "hold", fig.width = 7, fig.width = 7, eval = htmlswitch, echo = gitswitch, fig.cap = "this is a caption!", fig.align = "center"}
+```{r lablsbbytime, out.width = "50%", out.height = "50%", fig.hold = "hold", fig.width = 7, fig.width = 7, eval = htmlswitch, echo = gitswitch, fig.align = "center"}
 # same comments as above code in Honours section
 mydata %>%
   filter(ModuleTitle == "Lab in Social Psychology") %>%
