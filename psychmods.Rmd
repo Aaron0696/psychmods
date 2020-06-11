@@ -598,378 +598,6 @@ for(r in sort(as.character(unique(mydata$ModuleCode))))
 }
 ```
 
-#### GIF Codes
-
-Credits to *Jon Spring* in the thread at https://stackoverflow.com/questions/53162821/animated-sorted-bar-chart-with-bars-overtaking-each-other
-
-* Honour GIF
-
-```{r honourgif, eval = FALSE, class.source = "fold-show"}
-# df is a temporary dataframe used to generate the gif
-df <- mydata %>%
-  filter(Category ==  "Honour") %>% # only Honour modules
-  filter(Round == "1A") %>% # only round 1A
-  group_by(ModuleCode, ModuleTitle) %>% 
-  mutate(meanBidders = round(mean(Bidders),2), # create summary statistics copied from above
-         medianBidders = round(median(Bidders),2), 
-         sdBidders = round(sd(Bidders),2),
-         meanBpQ = round(mean(BidPerQuota),2), 
-         medianBpQ = round(median(BidPerQuota),2), 
-         sdBpQ = round(sd(BidPerQuota),2), 
-         meanLSB = round(mean(LowestSuccessfulBid),2), 
-         medianLSB = round(median(LowestSuccessfulBid),2), 
-         sdLSB = round(sd(LowestSuccessfulBid),2), 
-         meanQuota = round(mean(Quota),2),
-         medianQuota = round(median(Quota),2), 
-         sdQuota = round(sd(Quota),2)) %>%
-  filter(medianQuota >= 40) %>% # same filters as above
-  filter(medianBpQ > 1) %>%
-  ungroup() %>%
-  mutate(AcadSem = paste0(AcadYear, " Semester ", Semester)) %>% # create new column that combine AcadYear and Semester
-  mutate(Offered = "Yes") %>% # a column to indicate that the module was offered in the semester, will come into relevance later
-  ungroup() %>%
-  select(ModuleCode,ModuleTitle,AcadSem,LowestSuccessfulBid,Offered) %>% # only keep these columns
-  # calculate cumulative average
-  group_by(ModuleCode, ModuleTitle, AcadSem, Offered) %>%
-  summarize(LowestSuccessfulBid = mean(LowestSuccessfulBid)) %>% # average for modules with more than one lecture slot
-  ungroup() %>%
-  group_by(ModuleCode,ModuleTitle) %>%
-  arrange(AcadSem) %>% # sort by AcadYear such that the cumulative average calculates from the earliest AY
-  mutate(cmeanLSB = cumsum(LowestSuccessfulBid) / seq_along(LowestSuccessfulBid)) %>% # calculate
-  select(ModuleCode, ModuleTitle, AcadSem, LowestSuccessfulBid, Offered, cmeanLSB)
-df$AcadSem <- factor(df$AcadSem) # convert to factor
-ayvector <- levels(df$AcadSem) # vector of all AcadSem used for looping
-# for each module, fill up the missing AcadSems with the same statistics as the previous available AcadSem
-for(r in unique(df$ModuleCode)) # for each module
-{
-  temp <- df %>%
-    filter(ModuleCode == r) # get rows for that module
-  
-  assign("temp", temp, envir = .GlobalEnv) # assign temp to global environment such that it can be accessed outside the loop
-  
-  for(y in 1:length(ayvector)) # for each AcadSem
-  {
-    if(!(ayvector[y] %in% temp$AcadSem)) # if this AcadSem is not present for the module
-    {
-      if(y == 1) # if it is the first recorded AcadSem
-      {
-        assign("df", rbind(df, # add a new row with the following information
-                           data.frame(ModuleCode = r, 
-                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                      AcadSem = ayvector[y],
-                                      LowestSuccessfulBid = 0,
-                                      Offered = "No",
-                                      cmeanLSB = 0)), 
-               envir = .GlobalEnv)
-        
-        assign("temp", rbind(temp, # add a new row with the following information
-                             data.frame(ModuleCode = r,
-                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                        AcadSem = ayvector[y],
-                                        LowestSuccessfulBid = 0,
-                                        Offered = "No",
-                                        cmeanLSB = 0)), 
-               envir = .GlobalEnv)
-      } else 
-      {
-        assign("df", rbind(df, # same as above
-                           data.frame(ModuleCode = r,
-                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                      AcadSem = ayvector[y],
-                                      LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
-                                      Offered = "No",
-                                      cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])), 
-               envir = .GlobalEnv)
-        assign("temp", rbind(temp, # same as above
-                             data.frame(ModuleCode = r,
-                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                        AcadSem = ayvector[y],
-                                        LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
-                                        Offered = "No",
-                                        cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])),
-               envir = .GlobalEnv)
-      }
-    }
-  }
-}
-df <- df %>%
-  group_by(AcadSem) %>%
-  # The * 1 makes it possible to have non-integer ranks while sliding
-  mutate(rank = row_number(-cmeanLSB)*1) %>%
-  ungroup()
-p <- ggplot(df, aes(rank, 
-                    group = ModuleCode, 
-                    fill = as.factor(ModuleCode), 
-                    color = as.factor(ModuleCode))) +
-  geom_tile(aes(y = cmeanLSB/2,
-                height = cmeanLSB,
-                width = 0.9), 
-            alpha = 0.8, 
-            color = NA) +
-  geom_text(aes(y = 0, label = paste0(ModuleCode, ": " ,ModuleTitle," ")), vjust = 0.2, hjust = 1) +
-  geom_text(aes(y = cmeanLSB, label = as.character(round(cmeanLSB))), hjust = 0, nudge_y = 50) +
-  coord_flip(clip = "off", expand = FALSE) +
-  scale_y_continuous(labels = scales::comma) +
-  scale_x_reverse() +
-  guides(color = FALSE, fill = FALSE) +
-  labs(title='{closest_state}', x = "", y = "cmeanLSB") +
-  theme_classic() + 
-  theme(plot.title = element_text(hjust = 0, size = 22),
-        axis.ticks = element_blank(),
-        axis.text  = element_blank(),
-        axis.line.x = element_blank(),
-        plot.margin = margin(1,1,1,12, "cm"),
-        title = element_text(size = 12)) +
-  transition_states(AcadSem, transition_length = 1, state_length = 2) +
-  ease_aes('cubic-in-out')
-animate(p, fps = 10, duration = 20, width = 800, height = 600, res = 96)
-anim_save("Honourgif.gif")
-```
-
-* Lab GIF
-
-```{r labgif, eval = FALSE, class.source = "fold-show"}
-# df is a temporary dataframe used to generate the gif
-df <- mydata %>%
-  filter(Category ==  "Lab") %>% # only Honour modules
-  filter(Round == "1A") %>% # only round 1A
-  group_by(ModuleCode, ModuleTitle) %>% 
-  mutate(meanBidders = round(mean(Bidders),2), # create summary statistics copied from above
-         medianBidders = round(median(Bidders),2), 
-         sdBidders = round(sd(Bidders),2),
-         meanBpQ = round(mean(BidPerQuota),2), 
-         medianBpQ = round(median(BidPerQuota),2), 
-         sdBpQ = round(sd(BidPerQuota),2), 
-         meanLSB = round(mean(LowestSuccessfulBid),2), 
-         medianLSB = round(median(LowestSuccessfulBid),2), 
-         sdLSB = round(sd(LowestSuccessfulBid),2), 
-         meanQuota = round(mean(Quota),2),
-         medianQuota = round(median(Quota),2), 
-         sdQuota = round(sd(Quota),2)) %>%
-  ungroup() %>%
-  mutate(AcadSem = paste0(AcadYear, " Semester ", Semester)) %>% # create new column that combine AcadYear and Semester
-  mutate(Offered = "Yes") %>% # a column to indicate that the module was offered in the semester, will come into relevance later
-  ungroup() %>%
-  select(ModuleCode,ModuleTitle,AcadSem,LowestSuccessfulBid,Offered) %>% # only keep these columns
-  # calculate cumulative average
-  group_by(ModuleCode, ModuleTitle, AcadSem, Offered) %>%
-  summarize(LowestSuccessfulBid = mean(LowestSuccessfulBid)) %>% # average for modules with more than one lecture slot
-  ungroup() %>%
-  group_by(ModuleCode,ModuleTitle) %>%
-  arrange(AcadSem) %>% # sort by AcadYear such that the cumulative average calculates from the earliest AY
-  mutate(cmeanLSB = cumsum(LowestSuccessfulBid) / seq_along(LowestSuccessfulBid)) %>% # calculate
-  select(ModuleCode, ModuleTitle, AcadSem, LowestSuccessfulBid, Offered, cmeanLSB)
-df$AcadSem <- factor(df$AcadSem) # convert to factor
-ayvector <- levels(df$AcadSem) # vector of all AcadSem used for looping
-# for each module, fill up the missing AcadSems with the same statistics as the previous available AcadSem
-for(r in unique(df$ModuleCode)) # for each module
-{
-  temp <- df %>%
-    filter(ModuleCode == r) # get rows for that module
-  
-  assign("temp", temp, envir = .GlobalEnv) # assign temp to global environment such that it can be accessed outside the loop
-  
-  for(y in 1:length(ayvector)) # for each AcadSem
-  {
-    if(!(ayvector[y] %in% temp$AcadSem)) # if this AcadSem is not present for the module
-    {
-      if(y == 1) # if it is the first recorded AcadSem
-      {
-        assign("df", rbind(df, # add a new row with the following information
-                           data.frame(ModuleCode = r, 
-                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                      AcadSem = ayvector[y],
-                                      LowestSuccessfulBid = 0,
-                                      Offered = "No",
-                                      cmeanLSB = 0)), 
-               envir = .GlobalEnv)
-        
-        assign("temp", rbind(temp, # add a new row with the following information
-                             data.frame(ModuleCode = r,
-                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                        AcadSem = ayvector[y],
-                                        LowestSuccessfulBid = 0,
-                                        Offered = "No",
-                                        cmeanLSB = 0)), 
-               envir = .GlobalEnv)
-      } else 
-      {
-        assign("df", rbind(df, # same as above
-                           data.frame(ModuleCode = r,
-                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                      AcadSem = ayvector[y],
-                                      LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
-                                      Offered = "No",
-                                      cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])), 
-               envir = .GlobalEnv)
-        assign("temp", rbind(temp, # same as above
-                             data.frame(ModuleCode = r,
-                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                        AcadSem = ayvector[y],
-                                        LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
-                                        Offered = "No",
-                                        cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])),
-               envir = .GlobalEnv)
-      }
-    }
-  }
-}
-df <- df %>%
-  group_by(AcadSem) %>%
-  # The * 1 makes it possible to have non-integer ranks while sliding
-  mutate(rank = row_number(-cmeanLSB)*1) %>%
-  ungroup()
-p <- ggplot(df, aes(rank, 
-                    group = ModuleCode, 
-                    fill = as.factor(ModuleCode), 
-                    color = as.factor(ModuleCode))) +
-  geom_tile(aes(y = cmeanLSB/2,
-                height = cmeanLSB,
-                width = 0.9), 
-            alpha = 0.8, 
-            color = NA) +
-  geom_text(aes(y = 0, label = paste0(ModuleCode, ": " ,ModuleTitle," ")), vjust = 0.2, hjust = 1) +
-  geom_text(aes(y = cmeanLSB, label = as.character(round(cmeanLSB))), hjust = 0, nudge_y = 50) +
-  coord_flip(clip = "off", expand = FALSE) +
-  scale_y_continuous(labels = scales::comma) +
-  scale_x_reverse() +
-  guides(color = FALSE, fill = FALSE) +
-  labs(title='{closest_state}', x = "", y = "cmeanLSB") +
-  theme_classic() + 
-  theme(plot.title = element_text(hjust = 0, size = 22),
-        axis.ticks = element_blank(),
-        axis.text  = element_blank(),
-        plot.margin = margin(1,1,1,12, "cm"),
-        axis.line.x = element_blank(),
-        title = element_text(size = 12)) +
-  transition_states(AcadSem, transition_length = 1, state_length = 2) +
-  ease_aes('cubic-in-out')
-animate(p, fps = 10, duration = 20, width = 800, height = 600, res = 96)
-anim_save("labgif.gif")
-```
-
-* Elective GIF
-
-```{r elegif, eval = FALSE, class.source = "fold-show"}
-# df is a temporary dataframe used to generate the gif
-df <- mydata %>%
-  filter(Category ==  "Elective") %>% # only Honour modules
-  filter(Round == "1A") %>% # only round 1A
-  group_by(ModuleCode, ModuleTitle) %>% 
-  mutate(meanBidders = round(mean(Bidders),2), # create summary statistics copied from above
-         medianBidders = round(median(Bidders),2), 
-         sdBidders = round(sd(Bidders),2),
-         meanBpQ = round(mean(BidPerQuota),2), 
-         medianBpQ = round(median(BidPerQuota),2), 
-         sdBpQ = round(sd(BidPerQuota),2), 
-         meanLSB = round(mean(LowestSuccessfulBid),2), 
-         medianLSB = round(median(LowestSuccessfulBid),2), 
-         sdLSB = round(sd(LowestSuccessfulBid),2), 
-         meanQuota = round(mean(Quota),2),
-         medianQuota = round(median(Quota),2), 
-         sdQuota = round(sd(Quota),2)) %>%
-  ungroup() %>%
-  mutate(AcadSem = paste0(AcadYear, " Semester ", Semester)) %>% # create new column that combine AcadYear and Semester
-  mutate(Offered = "Yes") %>% # a column to indicate that the module was offered in the semester, will come into relevance later
-  ungroup() %>%
-  select(ModuleCode,ModuleTitle,AcadSem,LowestSuccessfulBid,Offered) %>% # only keep these columns
-  # calculate cumulative average
-  group_by(ModuleCode, ModuleTitle, AcadSem, Offered) %>%
-  summarize(LowestSuccessfulBid = mean(LowestSuccessfulBid)) %>% # average for modules with more than one lecture slot
-  ungroup() %>%
-  group_by(ModuleCode,ModuleTitle) %>%
-  arrange(AcadSem) %>% # sort by AcadYear such that the cumulative average calculates from the earliest AY
-  mutate(cmeanLSB = cumsum(LowestSuccessfulBid) / seq_along(LowestSuccessfulBid)) %>% # calculate
-  select(ModuleCode, ModuleTitle, AcadSem, LowestSuccessfulBid, Offered, cmeanLSB)
-df$AcadSem <- factor(df$AcadSem) # convert to factor
-ayvector <- levels(df$AcadSem) # vector of all AcadSem used for looping
-# for each module, fill up the missing AcadSems with the same statistics as the previous available AcadSem
-for(r in unique(df$ModuleCode)) # for each module
-{
-  temp <- df %>%
-    filter(ModuleCode == r) # get rows for that module
-  
-  assign("temp", temp, envir = .GlobalEnv) # assign temp to global environment such that it can be accessed outside the loop
-  
-  for(y in 1:length(ayvector)) # for each AcadSem
-  {
-    if(!(ayvector[y] %in% temp$AcadSem)) # if this AcadSem is not present for the module
-    {
-      if(y == 1) # if it is the first recorded AcadSem
-      {
-        assign("df", rbind(df, # add a new row with the following information
-                           data.frame(ModuleCode = r, 
-                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                      AcadSem = ayvector[y],
-                                      LowestSuccessfulBid = 0,
-                                      Offered = "No",
-                                      cmeanLSB = 0)), 
-               envir = .GlobalEnv)
-        
-        assign("temp", rbind(temp, # add a new row with the following information
-                             data.frame(ModuleCode = r,
-                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                        AcadSem = ayvector[y],
-                                        LowestSuccessfulBid = 0,
-                                        Offered = "No",
-                                        cmeanLSB = 0)), 
-               envir = .GlobalEnv)
-      } else 
-      {
-        assign("df", rbind(df, # same as above
-                           data.frame(ModuleCode = r,
-                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                      AcadSem = ayvector[y],
-                                      LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
-                                      Offered = "No",
-                                      cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])), 
-               envir = .GlobalEnv)
-        assign("temp", rbind(temp, # same as above
-                             data.frame(ModuleCode = r,
-                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
-                                        AcadSem = ayvector[y],
-                                        LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
-                                        Offered = "No",
-                                        cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])),
-               envir = .GlobalEnv)
-      }
-    }
-  }
-}
-df <- df %>%
-  group_by(AcadSem) %>%
-  # The * 1 makes it possible to have non-integer ranks while sliding
-  mutate(rank = row_number(-cmeanLSB)*1) %>%
-  ungroup()
-p <- ggplot(df, aes(rank, 
-                    group = ModuleCode, 
-                    fill = as.factor(ModuleCode), 
-                    color = as.factor(ModuleCode))) +
-  geom_tile(aes(y = cmeanLSB/2,
-                height = cmeanLSB,
-                width = 0.9), 
-            alpha = 0.8, 
-            color = NA) +
-  geom_text(aes(y = 0, label = paste0(ModuleCode, ": " ,ModuleTitle," ")), vjust = 0.2, hjust = 1) +
-  geom_text(aes(y = cmeanLSB, label = as.character(round(cmeanLSB))), hjust = 0, nudge_y = 50) +
-  coord_flip(clip = "off", expand = FALSE) +
-  scale_y_continuous(labels = scales::comma) +
-  scale_x_reverse() +
-  guides(color = FALSE, fill = FALSE) +
-  labs(title='{closest_state}', x = "", y = "cmeanLSB") +
-  theme_classic() + 
-  theme(plot.title = element_text(hjust = 0, size = 22),
-        axis.ticks = element_blank(),
-        axis.text  = element_blank(),
-        plot.margin = margin(1,1,1,12, "cm"),
-        axis.line.x = element_blank(),
-        title = element_text(size = 12)) +
-  transition_states(AcadSem, transition_length = 1, state_length = 2) +
-  ease_aes('cubic-in-out')
-animate(p, fps = 10, duration = 20, width = 800, height = 600, res = 96)
-anim_save("elegif.gif")
-```
-
 ## Post {.active}
 
 ### Tom
@@ -1203,6 +831,130 @@ Tom was rather discouraged, he was extremely interested in studying `Introductio
 <br>
 Tom wondered if these modules were as popular in the earlier parts of the decade, or did they only recently rise to fame? **The above figure was based on the average of a ~decade's worth of data**. To figure that out, he calculated the cumulative mean of the *LSB* (*cmeanLSB*) for each semester. The cumulative mean refers to the average of all past semesters where the module was offered. For example, the *cmeanLSB* at AY2015/2016 Semester 2 is the average of the *LSB* from AY2010/2011 Semester 1 to AY2015/2016 Semester 2, whenever the module was offered. The *GIF* below illustrates the changes in rankings of *cmeanLSB* as time proceeds, keep an eye on the top positions and sudden movements.
 
+```{r honourgif, eval = FALSE}
+# Credits to *Jon Spring* in the thread at 
+# https://stackoverflow.com/questions/53162821/animated-sorted-bar-chart-with-bars-overtaking-each-other
+# df is a temporary dataframe used to generate the gif
+df <- mydata %>%
+  filter(Category ==  "Honour") %>% # only Honour modules
+  filter(Round == "1A") %>% # only round 1A
+  group_by(ModuleCode, ModuleTitle) %>% 
+  mutate(meanBidders = round(mean(Bidders),2), # create summary statistics copied from above
+         medianBidders = round(median(Bidders),2), 
+         sdBidders = round(sd(Bidders),2),
+         meanBpQ = round(mean(BidPerQuota),2), 
+         medianBpQ = round(median(BidPerQuota),2), 
+         sdBpQ = round(sd(BidPerQuota),2), 
+         meanLSB = round(mean(LowestSuccessfulBid),2), 
+         medianLSB = round(median(LowestSuccessfulBid),2), 
+         sdLSB = round(sd(LowestSuccessfulBid),2), 
+         meanQuota = round(mean(Quota),2),
+         medianQuota = round(median(Quota),2), 
+         sdQuota = round(sd(Quota),2)) %>%
+  filter(medianQuota >= 40) %>% # same filters as above
+  filter(medianBpQ > 1) %>%
+  ungroup() %>%
+  mutate(AcadSem = paste0(AcadYear, " Semester ", Semester)) %>% # create new column that combine AcadYear and Semester
+  mutate(Offered = "Yes") %>% # a column to indicate that the module was offered in the semester, will come into relevance later
+  ungroup() %>%
+  select(ModuleCode,ModuleTitle,AcadSem,LowestSuccessfulBid,Offered) %>% # only keep these columns
+  # calculate cumulative average
+  group_by(ModuleCode, ModuleTitle, AcadSem, Offered) %>%
+  summarize(LowestSuccessfulBid = mean(LowestSuccessfulBid)) %>% # average for modules with more than one lecture slot
+  ungroup() %>%
+  group_by(ModuleCode,ModuleTitle) %>%
+  arrange(AcadSem) %>% # sort by AcadYear such that the cumulative average calculates from the earliest AY
+  mutate(cmeanLSB = cumsum(LowestSuccessfulBid) / seq_along(LowestSuccessfulBid)) %>% # calculate
+  select(ModuleCode, ModuleTitle, AcadSem, LowestSuccessfulBid, Offered, cmeanLSB)
+df$AcadSem <- factor(df$AcadSem) # convert to factor
+ayvector <- levels(df$AcadSem) # vector of all AcadSem used for looping
+# for each module, fill up the missing AcadSems with the same statistics as the previous available AcadSem
+for(r in unique(df$ModuleCode)) # for each module
+{
+  temp <- df %>%
+    filter(ModuleCode == r) # get rows for that module
+  
+  assign("temp", temp, envir = .GlobalEnv) # assign temp to global environment such that it can be accessed outside the loop
+  
+  for(y in 1:length(ayvector)) # for each AcadSem
+  {
+    if(!(ayvector[y] %in% temp$AcadSem)) # if this AcadSem is not present for the module
+    {
+      if(y == 1) # if it is the first recorded AcadSem
+      {
+        assign("df", rbind(df, # add a new row with the following information
+                           data.frame(ModuleCode = r, 
+                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                      AcadSem = ayvector[y],
+                                      LowestSuccessfulBid = 0,
+                                      Offered = "No",
+                                      cmeanLSB = 0)), 
+               envir = .GlobalEnv)
+        
+        assign("temp", rbind(temp, # add a new row with the following information
+                             data.frame(ModuleCode = r,
+                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                        AcadSem = ayvector[y],
+                                        LowestSuccessfulBid = 0,
+                                        Offered = "No",
+                                        cmeanLSB = 0)), 
+               envir = .GlobalEnv)
+      } else 
+      {
+        assign("df", rbind(df, # same as above
+                           data.frame(ModuleCode = r,
+                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                      AcadSem = ayvector[y],
+                                      LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
+                                      Offered = "No",
+                                      cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])), 
+               envir = .GlobalEnv)
+        assign("temp", rbind(temp, # same as above
+                             data.frame(ModuleCode = r,
+                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                        AcadSem = ayvector[y],
+                                        LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
+                                        Offered = "No",
+                                        cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])),
+               envir = .GlobalEnv)
+      }
+    }
+  }
+}
+df <- df %>%
+  group_by(AcadSem) %>%
+  # The * 1 makes it possible to have non-integer ranks while sliding
+  mutate(rank = row_number(-cmeanLSB)*1) %>%
+  ungroup()
+p <- ggplot(df, aes(rank, 
+                    group = ModuleCode, 
+                    fill = as.factor(ModuleCode), 
+                    color = as.factor(ModuleCode))) +
+  geom_tile(aes(y = cmeanLSB/2,
+                height = cmeanLSB,
+                width = 0.9), 
+            alpha = 0.8, 
+            color = NA) +
+  geom_text(aes(y = 0, label = paste0(ModuleCode, ": " ,ModuleTitle," ")), vjust = 0.2, hjust = 1) +
+  geom_text(aes(y = cmeanLSB, label = as.character(round(cmeanLSB))), hjust = 0, nudge_y = 50) +
+  coord_flip(clip = "off", expand = FALSE) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_reverse() +
+  guides(color = FALSE, fill = FALSE) +
+  labs(title='{closest_state}', x = "", y = "cmeanLSB") +
+  theme_classic() + 
+  theme(plot.title = element_text(hjust = 0, size = 22),
+        axis.ticks = element_blank(),
+        axis.text  = element_blank(),
+        axis.line.x = element_blank(),
+        plot.margin = margin(1,1,1,12, "cm"),
+        title = element_text(size = 12)) +
+  transition_states(AcadSem, transition_length = 1, state_length = 2) +
+  ease_aes('cubic-in-out')
+animate(p, fps = 10, duration = 20, width = 800, height = 600, res = 96)
+anim_save("Honourgif.gif")
+```
+
 <img src="Honourgif.gif" width="520" height="390" />
 
 `Introduction to Counselling Psychology` and `Correctional Psychology` consistently remained at the top of the graph. Even though they were sometimes overtaken by other modules that commanded high *LSB* for a semester or two such as `Positive Psychology`, the top spots were reclaimed after a few more semesters. They were not just popular in a certain semester but were consistently the most popular modules at any point in time, even after being offered many times in the past decade.
@@ -1328,6 +1080,128 @@ ggplotly(
 
 Similarly, the *GIF* below displays the *cmeanLSB* of the Lab modules. Unlike the Honour modules, every Lab module was displayed regardless of criteria 1. and 2. as there were less Lab modules. Other than the popular modules, we can also use it to identify modules that were consistently at the bottom. Notice how the least popular modules that stayed at the bottom of the graph were mostly and consistently Cognitive Psychology modules, including `Lab in Perception and Attention`, `Lab in Memory and Cognition` and `Lab in Cognitive Psychology`. `Lab in Music Perception and Cognition` is special as it was relatively difficult to meet the pre-requisite for that module, the module requires formal certified experience in Music.
 
+```{r labgif, eval = FALSE}
+# Credits to *Jon Spring* in the thread at 
+# https://stackoverflow.com/questions/53162821/animated-sorted-bar-chart-with-bars-overtaking-each-other
+# df is a temporary dataframe used to generate the gif
+df <- mydata %>%
+  filter(Category ==  "Lab") %>% # only Honour modules
+  filter(Round == "1A") %>% # only round 1A
+  group_by(ModuleCode, ModuleTitle) %>% 
+  mutate(meanBidders = round(mean(Bidders),2), # create summary statistics copied from above
+         medianBidders = round(median(Bidders),2), 
+         sdBidders = round(sd(Bidders),2),
+         meanBpQ = round(mean(BidPerQuota),2), 
+         medianBpQ = round(median(BidPerQuota),2), 
+         sdBpQ = round(sd(BidPerQuota),2), 
+         meanLSB = round(mean(LowestSuccessfulBid),2), 
+         medianLSB = round(median(LowestSuccessfulBid),2), 
+         sdLSB = round(sd(LowestSuccessfulBid),2), 
+         meanQuota = round(mean(Quota),2),
+         medianQuota = round(median(Quota),2), 
+         sdQuota = round(sd(Quota),2)) %>%
+  ungroup() %>%
+  mutate(AcadSem = paste0(AcadYear, " Semester ", Semester)) %>% # create new column that combine AcadYear and Semester
+  mutate(Offered = "Yes") %>% # a column to indicate that the module was offered in the semester, will come into relevance later
+  ungroup() %>%
+  select(ModuleCode,ModuleTitle,AcadSem,LowestSuccessfulBid,Offered) %>% # only keep these columns
+  # calculate cumulative average
+  group_by(ModuleCode, ModuleTitle, AcadSem, Offered) %>%
+  summarize(LowestSuccessfulBid = mean(LowestSuccessfulBid)) %>% # average for modules with more than one lecture slot
+  ungroup() %>%
+  group_by(ModuleCode,ModuleTitle) %>%
+  arrange(AcadSem) %>% # sort by AcadYear such that the cumulative average calculates from the earliest AY
+  mutate(cmeanLSB = cumsum(LowestSuccessfulBid) / seq_along(LowestSuccessfulBid)) %>% # calculate
+  select(ModuleCode, ModuleTitle, AcadSem, LowestSuccessfulBid, Offered, cmeanLSB)
+df$AcadSem <- factor(df$AcadSem) # convert to factor
+ayvector <- levels(df$AcadSem) # vector of all AcadSem used for looping
+# for each module, fill up the missing AcadSems with the same statistics as the previous available AcadSem
+for(r in unique(df$ModuleCode)) # for each module
+{
+  temp <- df %>%
+    filter(ModuleCode == r) # get rows for that module
+  
+  assign("temp", temp, envir = .GlobalEnv) # assign temp to global environment such that it can be accessed outside the loop
+  
+  for(y in 1:length(ayvector)) # for each AcadSem
+  {
+    if(!(ayvector[y] %in% temp$AcadSem)) # if this AcadSem is not present for the module
+    {
+      if(y == 1) # if it is the first recorded AcadSem
+      {
+        assign("df", rbind(df, # add a new row with the following information
+                           data.frame(ModuleCode = r, 
+                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                      AcadSem = ayvector[y],
+                                      LowestSuccessfulBid = 0,
+                                      Offered = "No",
+                                      cmeanLSB = 0)), 
+               envir = .GlobalEnv)
+        
+        assign("temp", rbind(temp, # add a new row with the following information
+                             data.frame(ModuleCode = r,
+                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                        AcadSem = ayvector[y],
+                                        LowestSuccessfulBid = 0,
+                                        Offered = "No",
+                                        cmeanLSB = 0)), 
+               envir = .GlobalEnv)
+      } else 
+      {
+        assign("df", rbind(df, # same as above
+                           data.frame(ModuleCode = r,
+                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                      AcadSem = ayvector[y],
+                                      LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
+                                      Offered = "No",
+                                      cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])), 
+               envir = .GlobalEnv)
+        assign("temp", rbind(temp, # same as above
+                             data.frame(ModuleCode = r,
+                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                        AcadSem = ayvector[y],
+                                        LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
+                                        Offered = "No",
+                                        cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])),
+               envir = .GlobalEnv)
+      }
+    }
+  }
+}
+df <- df %>%
+  group_by(AcadSem) %>%
+  # The * 1 makes it possible to have non-integer ranks while sliding
+  mutate(rank = row_number(-cmeanLSB)*1) %>%
+  ungroup()
+p <- ggplot(df, aes(rank, 
+                    group = ModuleCode, 
+                    fill = as.factor(ModuleCode), 
+                    color = as.factor(ModuleCode))) +
+  geom_tile(aes(y = cmeanLSB/2,
+                height = cmeanLSB,
+                width = 0.9), 
+            alpha = 0.8, 
+            color = NA) +
+  geom_text(aes(y = 0, label = paste0(ModuleCode, ": " ,ModuleTitle," ")), vjust = 0.2, hjust = 1) +
+  geom_text(aes(y = cmeanLSB, label = as.character(round(cmeanLSB))), hjust = 0, nudge_y = 50) +
+  coord_flip(clip = "off", expand = FALSE) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_reverse() +
+  guides(color = FALSE, fill = FALSE) +
+  labs(title='{closest_state}', x = "", y = "cmeanLSB") +
+  theme_classic() + 
+  theme(plot.title = element_text(hjust = 0, size = 22),
+        axis.ticks = element_blank(),
+        axis.text  = element_blank(),
+        plot.margin = margin(1,1,1,12, "cm"),
+        axis.line.x = element_blank(),
+        title = element_text(size = 12)) +
+  transition_states(AcadSem, transition_length = 1, state_length = 2) +
+  ease_aes('cubic-in-out')
+animate(p, fps = 10, duration = 20, width = 800, height = 600, res = 96)
+anim_save("labgif.gif")
+```
+
 <img src="labgif.gif" width="520" height="390" />
 
 Impressively, `Lab in Social Psychology` never lost its top spot since 2010 but its *LSB* has fallen since its absurdly high *LSB* of ~1600 in 2012/2013 Semester 1. There were even two semesters where the module was worth less than 100 bid points but it experienced a rise in recent years.
@@ -1440,6 +1314,128 @@ ggplotly(
 ```
 
 One of the first thing to point out is the new x-axis, it no longer runs up to 1600 but up to 300. In general, Elective modules were cheaper compared to the other categories of modules. This is due to a combination of reasons such as the younger bidders (year 2 and 3) and larger quota (which meant most students were allocated these module in the Module Preference Exercise). As usual, lets look at the *GIF* of *cmeanLSB*. 
+
+```{r elegif, eval = FALSE}
+# Credits to *Jon Spring* in the thread at 
+# https://stackoverflow.com/questions/53162821/animated-sorted-bar-chart-with-bars-overtaking-each-other
+# df is a temporary dataframe used to generate the gif
+df <- mydata %>%
+  filter(Category ==  "Elective") %>% # only Honour modules
+  filter(Round == "1A") %>% # only round 1A
+  group_by(ModuleCode, ModuleTitle) %>% 
+  mutate(meanBidders = round(mean(Bidders),2), # create summary statistics copied from above
+         medianBidders = round(median(Bidders),2), 
+         sdBidders = round(sd(Bidders),2),
+         meanBpQ = round(mean(BidPerQuota),2), 
+         medianBpQ = round(median(BidPerQuota),2), 
+         sdBpQ = round(sd(BidPerQuota),2), 
+         meanLSB = round(mean(LowestSuccessfulBid),2), 
+         medianLSB = round(median(LowestSuccessfulBid),2), 
+         sdLSB = round(sd(LowestSuccessfulBid),2), 
+         meanQuota = round(mean(Quota),2),
+         medianQuota = round(median(Quota),2), 
+         sdQuota = round(sd(Quota),2)) %>%
+  ungroup() %>%
+  mutate(AcadSem = paste0(AcadYear, " Semester ", Semester)) %>% # create new column that combine AcadYear and Semester
+  mutate(Offered = "Yes") %>% # a column to indicate that the module was offered in the semester, will come into relevance later
+  ungroup() %>%
+  select(ModuleCode,ModuleTitle,AcadSem,LowestSuccessfulBid,Offered) %>% # only keep these columns
+  # calculate cumulative average
+  group_by(ModuleCode, ModuleTitle, AcadSem, Offered) %>%
+  summarize(LowestSuccessfulBid = mean(LowestSuccessfulBid)) %>% # average for modules with more than one lecture slot
+  ungroup() %>%
+  group_by(ModuleCode,ModuleTitle) %>%
+  arrange(AcadSem) %>% # sort by AcadYear such that the cumulative average calculates from the earliest AY
+  mutate(cmeanLSB = cumsum(LowestSuccessfulBid) / seq_along(LowestSuccessfulBid)) %>% # calculate
+  select(ModuleCode, ModuleTitle, AcadSem, LowestSuccessfulBid, Offered, cmeanLSB)
+df$AcadSem <- factor(df$AcadSem) # convert to factor
+ayvector <- levels(df$AcadSem) # vector of all AcadSem used for looping
+# for each module, fill up the missing AcadSems with the same statistics as the previous available AcadSem
+for(r in unique(df$ModuleCode)) # for each module
+{
+  temp <- df %>%
+    filter(ModuleCode == r) # get rows for that module
+  
+  assign("temp", temp, envir = .GlobalEnv) # assign temp to global environment such that it can be accessed outside the loop
+  
+  for(y in 1:length(ayvector)) # for each AcadSem
+  {
+    if(!(ayvector[y] %in% temp$AcadSem)) # if this AcadSem is not present for the module
+    {
+      if(y == 1) # if it is the first recorded AcadSem
+      {
+        assign("df", rbind(df, # add a new row with the following information
+                           data.frame(ModuleCode = r, 
+                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                      AcadSem = ayvector[y],
+                                      LowestSuccessfulBid = 0,
+                                      Offered = "No",
+                                      cmeanLSB = 0)), 
+               envir = .GlobalEnv)
+        
+        assign("temp", rbind(temp, # add a new row with the following information
+                             data.frame(ModuleCode = r,
+                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                        AcadSem = ayvector[y],
+                                        LowestSuccessfulBid = 0,
+                                        Offered = "No",
+                                        cmeanLSB = 0)), 
+               envir = .GlobalEnv)
+      } else 
+      {
+        assign("df", rbind(df, # same as above
+                           data.frame(ModuleCode = r,
+                                      ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                      AcadSem = ayvector[y],
+                                      LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
+                                      Offered = "No",
+                                      cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])), 
+               envir = .GlobalEnv)
+        assign("temp", rbind(temp, # same as above
+                             data.frame(ModuleCode = r,
+                                        ModuleTitle = mydata$ModuleTitle[mydata$ModuleCode == r][1],
+                                        AcadSem = ayvector[y],
+                                        LowestSuccessfulBid = temp$LowestSuccessfulBid[temp$AcadSem == ayvector[y-1]],
+                                        Offered = "No",
+                                        cmeanLSB = temp$cmeanLSB[temp$AcadSem == ayvector[y-1]])),
+               envir = .GlobalEnv)
+      }
+    }
+  }
+}
+df <- df %>%
+  group_by(AcadSem) %>%
+  # The * 1 makes it possible to have non-integer ranks while sliding
+  mutate(rank = row_number(-cmeanLSB)*1) %>%
+  ungroup()
+p <- ggplot(df, aes(rank, 
+                    group = ModuleCode, 
+                    fill = as.factor(ModuleCode), 
+                    color = as.factor(ModuleCode))) +
+  geom_tile(aes(y = cmeanLSB/2,
+                height = cmeanLSB,
+                width = 0.9), 
+            alpha = 0.8, 
+            color = NA) +
+  geom_text(aes(y = 0, label = paste0(ModuleCode, ": " ,ModuleTitle," ")), vjust = 0.2, hjust = 1) +
+  geom_text(aes(y = cmeanLSB, label = as.character(round(cmeanLSB))), hjust = 0, nudge_y = 50) +
+  coord_flip(clip = "off", expand = FALSE) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_reverse() +
+  guides(color = FALSE, fill = FALSE) +
+  labs(title='{closest_state}', x = "", y = "cmeanLSB") +
+  theme_classic() + 
+  theme(plot.title = element_text(hjust = 0, size = 22),
+        axis.ticks = element_blank(),
+        axis.text  = element_blank(),
+        plot.margin = margin(1,1,1,12, "cm"),
+        axis.line.x = element_blank(),
+        title = element_text(size = 12)) +
+  transition_states(AcadSem, transition_length = 1, state_length = 2) +
+  ease_aes('cubic-in-out')
+animate(p, fps = 10, duration = 20, width = 800, height = 600, res = 96)
+anim_save("elegif.gif")
+```
 
 <img src="elegif.gif" width="520" height="390" />
 
