@@ -1,7 +1,6 @@
 ---
 title: "Popularity of Psychology Modules"
 author: "Aaron0696"
-indent: true
 output:
   html_document:
     fig_align: center
@@ -39,10 +38,10 @@ rmarkdown::render(input = "psychmods.Rmd",
                   output_file = "docs/index.html")
 ```
 
-# TL:DR/Summary
+# TL:DR/Summary {.tabset}
 
 <div style="line-height: 2em;">
-The characteristics of popular/unpopular modules was discussed and module bidding statistics were utilized as indicators of these characteristics. With the bidding statistics as indicators of popularity and defined criteria, we found the most and least popular Elective, Lab and Honour modules. In addition to the list of popular/unpopular modules, we also noticed that Cognitive and Biological Psychology modules were underrepresented in the list of popular modules and overrepresented in the list of unpopular modules. Within the limits of the current data and analysis, it seems fair to say that Cognitive and Biological Psychology modules tend to be less popular. The ranked list of modules that would also be useful in guiding balloting preferences for future undergraduates.
+The characteristics of popular/unpopular modules were discussed and module bidding statistics were utilized as indicators of these characteristics. With the bidding statistics as indicators of popularity, we found the most and least popular Elective, Lab and Honour modules. In addition to the list of popular/unpopular modules, we also noticed that Cognitive and Biological Psychology modules were underrepresented in the list of popular modules and overrepresented in the list of unpopular modules. Within the limits of the current data and analysis, it seems fair to say that Cognitive and Biological Psychology modules tend to be less popular. The ranked list of modules that would also be useful in guiding balloting preferences for future undergraduates.
 
 <div class = "green">
 This was a personal project by me, using data from [NUSMods](nusmods.com). Most of the heavy lifting in this project was extracting, wrangling, visualizing and understanding the data. I written this post to help consolidate my understanding of the data while at the same time provide some useful insights with various visualizations. This understanding was important to me as I intend to conduct further projects/analysis on the extracted data.
@@ -53,8 +52,7 @@ The codes and documents that I used to generate this page can also be found in t
 
 </div>
 </div>
-
-# PsychMods {.tabset}
+<br>
 
 ## Codes
 
@@ -80,7 +78,7 @@ library(gganimate)
 library(semTools)
 options(width = 999)
 # chunk options defaults
-knitr::opts_chunk$set(dpi = 96, out.width = "50%", out.height = "50%")
+knitr::opts_chunk$set(dpi = 96, out.width = "50%", out.height = "50%", fig.align = "center")
 ```
 
 #### Load Bidding Data
@@ -207,8 +205,6 @@ myModInfo <- readRDS("myModInfo.RDS")
     * Removing modules without module titles, these are modules that appeared before AY2014/2015 and never resurfaced afterwards.
     * Removing information about tutorials.
 
-##### Filter
-
 ```{r filtermod, class.source = "fold-show"}
 myModInfo <- myModInfo %>%
   select(-LastModified, -LastModified_js, -isDelete) %>% # remove these columns
@@ -235,8 +231,6 @@ tail(myModInfo) # peek
     * Removing information from modules with more than one lecture/seminar session.
     * Removing bidding information from non-psychology students.
 * Create new variable *ClassNo* by transforming from *Group* such that this information can be used to merge with `myModInfo`.
-
-##### Filter & Transform
 
 ```{r filterbid, class.source = "fold-show"}
 myBid <- myBid %>%
@@ -359,7 +353,7 @@ numnames <- mydata %>% select_if(is.numeric) %>% names()
 numnames.time <- names(select_if(mydata, is.numeric))[-grep("StartTime", numnames)]
 ```
 
-#### Modules With Different Module Codes
+#### Identify Modules With Multiple Module Codes {.active}
 
 ```{r colmodcode, class.source = "fold-show"}
 for(r in unique(mydata$ModuleTitle))
@@ -388,8 +382,6 @@ summary(mydata)
 ```
 
 #### Univariate Histograms/Boxplots {.tabset .tabset-fade .tabset-pills}
-
-* Plots to illustrate the frequency/distribution of variables.
 
 ##### Categorical Variables
 
@@ -429,8 +421,6 @@ for(r in numnames)
 ```
 
 #### Bivariate Plots {.tabset .tabset-fade .tabset-pills}
-
-* Plots to illustrate pairwise relationships amongst variables.
 
 ##### Categorical-Categorical
 
@@ -516,18 +506,19 @@ for(r in facnames.mod) # loop across all factor columns
 ##### Correlation Matrix
 
 ```{r corrmatrix, eval = gitswitch, out.height = "80%", out.width = "80%", class.source = "fold-show"}
-corrplot.mixed(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(mydata))]), # only get the numeric columns
-               upper = "color",
-               tl.pos = "lt",
-               tl.cex = 0.5,
-               cl.cex = 0.5)
+corrplot(cor(mydata[,grep(paste0(numnames.time, collapse = "|"), names(mydata))]), # only get the numeric columns
+         tl.pos = "tl",
+         tl.cex = 0.6,
+         cl.cex = 0.5,
+         method = "number", 
+         mar = c(1,1,1,1))
 ```
 
 ### Phase 5: Supplementary Graphs {.tabset .tabset-fade .tabset-pills}
 
 #### Count Of Modules Per Semester
 
-```{r, fig.width = 9, eval = gitswitch, out.height = "80%", out.width = "80%", class.source = "fold-show"}
+```{r countmodsbysem, fig.width = 9, eval = gitswitch, out.height = "80%", out.width = "80%", class.source = "fold-show"}
 mydata %>%
   group_by(AcadYear, Semester, ModuleCode, Category) %>%
   tally() %>%
@@ -609,11 +600,11 @@ for(r in sort(as.character(unique(mydata$ModuleCode))))
 
 #### GIF Codes
 
-Credits to *Jon Spring* in the tread at https://stackoverflow.com/questions/53162821/animated-sorted-bar-chart-with-bars-overtaking-each-other
+Credits to *Jon Spring* in the thread at https://stackoverflow.com/questions/53162821/animated-sorted-bar-chart-with-bars-overtaking-each-other
 
-##### Honour GIF
+* Honour GIF
 
-```{r Honourgif, eval = FALSE, class.source = "fold-show"}
+```{r honourgif, eval = FALSE, class.source = "fold-show"}
 # df is a temporary dataframe used to generate the gif
 df <- mydata %>%
   filter(Category ==  "Honour") %>% # only Honour modules
@@ -735,7 +726,7 @@ animate(p, fps = 10, duration = 20, width = 800, height = 600, res = 96)
 anim_save("Honourgif.gif")
 ```
 
-##### Lab GIF
+* Lab GIF
 
 ```{r labgif, eval = FALSE, class.source = "fold-show"}
 # df is a temporary dataframe used to generate the gif
@@ -857,7 +848,7 @@ animate(p, fps = 10, duration = 20, width = 800, height = 600, res = 96)
 anim_save("labgif.gif")
 ```
 
-##### Elective GIF
+* Elective GIF
 
 ```{r elegif, eval = FALSE, class.source = "fold-show"}
 # df is a temporary dataframe used to generate the gif
@@ -1592,5 +1583,7 @@ Once again, Cognitive Psychology dominated the list of unpopular modules, even a
 
 ### Summary
 
-Tom discussed the characteristics of popular/unpopular modules and used module bidding statistics as indicators of these characteristics. with the bidding statistics as indicators of popularity and defined criteria, he found the most and least popular Elective, Lab and Honour modules. In addition to the list of popular/unpopular modules, he also noticed that Cognitive and Biological Psychology modules were underrepresented in the list of popular modules and overrepresented in the list of unpopular modules. Within the limits of the current data and analysis, it seems fair to say that Cognitive and Biological Psychology modules tend to be less popular. He also obtained a ranked list of modules that would be useful in guiding balloting preferences for future undergraduates.
+Tom discussed the characteristics of popular/unpopular modules and used module bidding statistics as indicators of these characteristics. with the bidding statistics as indicators of popularity and defined criteria, he found the most and least popular Elective, Lab and Honour modules. In addition to the list of popular/unpopular modules, he also noticed that Cognitive and Biological Psychology modules were underrepresented in the list of popular modules and overrepresented in the list of unpopular modules. Within the limits of the current data and analysis, it seems fair to say that Cognitive and Biological Psychology modules tend to be less popular. He also obtained a ranked list of modules that would be useful in guiding balloting preferences for future undergraduates. He also ended with more questions after the whole project, as he pondered why Cognitive Psychology was less popular? Was it the career prospects? Was it the content? Perceived difficulty of the topics? Tom would keep an eye out for data that could answer these questions.
+
+***
 </div>
