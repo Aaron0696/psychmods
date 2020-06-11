@@ -1093,7 +1093,7 @@ The bar graphs below illustrates the mean *Quota*, *Bidders*, *BpQ* and *LSB* of
 <br>
 <br>
 
-```{r comparecat, fig.width = 4, fig.height = 3, out.width = "25%", out.height = "20%", eval = htmlswitch, echo = gitswitch}
+```{r comparecat, fig.width = 4, fig.height = 3, out.width = "25%", out.height = "20%", eval = htmlswitch, echo = gitswitch, fig.align = ""}
 for(r in c("meanQuota", "meanBidders", "meanBpQ", "meanLSB")) # for each of these summary statistics
 {
   plot(
@@ -1209,7 +1209,7 @@ Tom wondered if these modules were as popular in the earlier parts of the decade
 <br>
 To understand how the *LSB* of these modules changed through the decade, the *LSB* of each module (*y-axis*) was plotted against each semester that they were offered (*x-axis*). 
 
-```{r lsbbytime, out.width = "40%", out.height = "40%", fig.hold = "hold", fig.width = 7, fig.width = 7, eval = htmlswitch, echo = gitswitch}
+```{r lsbbytime, out.width = "40%", out.height = "40%", fig.hold = "hold", fig.width = 7, fig.width = 7, eval = htmlswitch, echo = gitswitch, fig.align = ""}
 for(r in c("Introduction to Counselling Psychology", 
            "Correctional Psychology",
            "Social Psychology of the Unconscious",
@@ -1372,7 +1372,7 @@ To illustrate this point, the *Cumulative Distribution Functions* for *Quota* in
 
 * Notice that there was a steep jump in the curves for Honour and Lab modules, suggesting that there were distinct groups of modules distinguished by their *Quota*. This steep jump is absent in the Elective modules.
 
-```{r cdfquota, fig.height = 3, fig.width = 3, out.width = "25%", out.height = "25%", eval = htmlswitch, echo = gitswitch}
+```{r cdfquota, fig.height = 3, fig.width = 3, out.width = "25%", out.height = "25%", eval = htmlswitch, echo = gitswitch, fig.align = ""}
 for(r in c("Core", "Elective", "Lab", "Honour")) # for each category
 {
   plot(mydata %>%
@@ -1445,7 +1445,7 @@ One of the first thing to point out is the new x-axis, it no longer runs up to 1
 
 `Group Dynamics` makes quite an impression, as it commanded a *LSB* of ~800 in its first entrance of the decade. It quickly rose to the top but fell after a few semesters as other modules were offered and its LSB was lowered after a few semesters. Meanwhile, `Personality and Individual Differences` raced to the top in the last half of the decade with a steady and consistent climb. 
 
-```{r elelsbbytime, out.width = "50%", out.height = "50%", fig.hold = "hold", fig.width = 7, fig.width = 7, eval = htmlswitch, echo = gitswitch}
+```{r elelsbbytime, out.width = "50%", out.height = "50%", fig.hold = "hold", fig.width = 7, fig.width = 7, eval = htmlswitch, echo = gitswitch, fig.align = ""}
 # same comments as above code in Honours section
 for(r in c("Group Dynamics", "Personality & Individual Differences"))
 {
