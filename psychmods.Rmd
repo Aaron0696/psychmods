@@ -76,9 +76,9 @@ library(semTools)
 library(plotly)
 library(gganimate)
 library(semTools)
-options(width = 999)
+# options(width = 999)
 # chunk options defaults
-knitr::opts_chunk$set(dpi = 96, out.width = "50%", out.height = "50%", fig.align = "center")
+knitr::opts_chunk$set(dpi = 96, out.width = "50%", out.height = "50%")
 ```
 
 #### Load Bidding Data
