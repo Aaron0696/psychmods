@@ -2,7 +2,7 @@
 
 A personal project by me to extract and analyze data from [NUSMods](nusmods.com). The written post corresponding to this repository is found at https://aaron0696.github.io/psychmods/.
 
-This repository contains the following documents.
+This repository contains the following documents for reference.
 
 1. *psychmods.Rmd* is the RMarkdown file that I have used to create the post at https://aaron0696.github.io/psychmods/, which details the codes, explanation and walkthrough of the objective, analysis and results.
 2. *myBid.RDS* and *myModInfo.RDS* contains the information extracted from the [NUSMods API](https://nusmods.com/api/), saved in compact R objects. These are the datafiles used in *psychmods.Rmd* and were created with the codes detailed in the post.
