@@ -605,7 +605,7 @@ for(r in sort(as.character(unique(mydata$ModuleCode))))
 <div style="line-height: 2em;">
 
 <div class = "tom">
-Tom is an undergraduate in NUS Psychology and beginning his final year of studies. It is the beginning of the semester and the time for [module balloting](http://www.nus.edu.sg/ModReg/), which determines the modules that Tom will be studying in the coming semester. To graduate with a Honours Degree, Tom needs to complete 5 Honours modules. As Tom is looking to be a *Clinical Psychologist* in the future, he hopes to study modules relating to *Clinical Psychology*. Whenever Tom thinks and ponders, the text box would be highlighted in blue.
+Tom is an undergraduate in NUS Psychology and beginning his final year of studies. It is the beginning of the semester and the time for [module balloting](http://www.nus.edu.sg/ModReg/), which determines the modules that Tom will be studying in the coming semester. To graduate with a Honours Degree, Tom needs to complete 5 Honour modules. As Tom is looking to be a *Clinical Psychologist* in the future, he hopes to study modules relating to *Clinical Psychology*. Whenever Tom thinks and ponders, the text box would be highlighted in blue.
 </div>
 
 ### Balloting And Bidding
@@ -716,7 +716,9 @@ To proceed, Tom required consensus on what popularity is and how to compare it. 
     * A value above 1 indicates that the module had more bidders than quota (*demand > supply*) and a value below 1 indicates the opposite.
 4) **Lowest Successful Bid (LSB)**
     * The lowest bid that was allocated the module, students who bidded below this value will not be allocated the module.
+
 <br>
+
 The bar graphs below illustrates the mean *Quota*, *Bidders*, *BpQ* and *LSB* of each module category, calculated across all modules, semesters and rounds. The different categories vary greatly in these statistics and their importance to the undergraduate program, which makes it difficult to meaningfully compare popularity across categories.
 <br>
 <br>
@@ -1446,7 +1448,8 @@ anim_save("elegif.gif")
 for(r in c("Group Dynamics", "Personality & Individual Differences"))
 {
   # lsb
-  mydata %>%
+  plot(
+    mydata %>%
     filter(ModuleTitle == r) %>%
     filter(Round == "1A") %>%
     mutate(AcadSem = paste0(AcadYear, " Semester ", Semester)) %>%
@@ -1468,6 +1471,7 @@ for(r in c("Group Dynamics", "Personality & Individual Differences"))
           strip.text = element_text(color = "white", size = 12),
           title = element_text(size = 12),
           axis.line.x = element_blank())
+  )
 }
 ```
 
