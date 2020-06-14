@@ -9,6 +9,8 @@ output:
     theme: yeti
     code_folding: hide
     df_print: paged
+    includes:
+       in_header: GA_script.html
   github_document:
     toc: true
     toc_depth: 3
