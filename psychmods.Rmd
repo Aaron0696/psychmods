@@ -811,7 +811,6 @@ ggplotly(
           axis.title.y = element_blank()) + 
     scale_fill_gradient(low = "grey90", high = "palegreen1")
   , tooltip = c("x", "label", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l") # show hovertext
-  , height = 400, width = 800
 ) %>%
   style(hoverinfo = "none", traces = 19) # remove unnecessary hover information on geom_text()
 ```
@@ -1063,7 +1062,6 @@ ggplotly(
           axis.title.y = element_blank()) + 
     scale_fill_gradient(low = "grey90", high = "deepskyblue1")
   , tooltip = c("x", "label", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l") # show relevant hovertext
-  , height = 400, width = 800
 ) %>%
   style(hoverinfo = "none", traces = 7) # remove unnecessary hovers
 ```
@@ -1310,7 +1308,6 @@ ggplotly(
           axis.title.y = element_blank()) + 
     scale_fill_gradient(low = "grey90", high = "plum3")
   , tooltip = c("x", "label", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l")
-  , height = 400, width = 800
 ) %>%
   style(hoverinfo = "none", traces = 20)
 ```
