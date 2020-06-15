@@ -767,7 +767,7 @@ Modules that do not fit criteria *1.* and *2.* will not be considered popular. A
 
 #### Honour Modules
 
-```{r Honourplotlylsb, fig.height = 7, fig.width = 7, fig.align = "center", eval = htmlswitch, echo = gitswitch}
+```{r Honourplotlylsb, fig.height = 7, fig.width = 7, fig.align = "center", eval = htmlswitch, echo = gitswitch, out.width = '100%'}
 # dataframe
 popHonour <- mydata %>%
     filter(Category ==  "Honour") %>% # only Honour modules
@@ -1019,7 +1019,7 @@ The key question was *4*. If Tom was okay with taking 5 unpopular modules anyway
 
 #### Lab Modules
 
-```{r labplotly, fig.height = 7, fig.width = 7, fig.align = "center", eval = htmlswitch, echo = gitswitch}
+```{r labplotly, fig.height = 7, fig.width = 7, fig.align = "center", eval = htmlswitch, echo = gitswitch, out.width = '100%'}
 # dataframe
 popLab <- mydata %>%
   filter(Category ==  "Lab") %>% # only lab
@@ -1268,7 +1268,7 @@ for(r in c("Core", "Elective", "Lab", "Honour")) # for each category
 
 Here is the bar chart for all Elective modules:
 
-```{r eleplotly, fig.height = 7, fig.width = 7, fig.align = "center", eval = htmlswitch, echo = gitswitch}
+```{r eleplotly, fig.height = 7, fig.width = 7, fig.align = "center", eval = htmlswitch, echo = gitswitch, out.width = '100%'}
 # same comments as above code in Honours section
 popElec <- mydata %>%
   filter(Category ==  "Elective") %>%
