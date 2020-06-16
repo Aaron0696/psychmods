@@ -22,6 +22,40 @@ p.caption {
 
 div.tom { background-color:#e6ffff; border-radius: 5px; padding: 20px;}
 div.green { background-color:#b3ffe6; border-radius: 5px; padding: 20px;}
+
+div.fluid-row {
+    color: #fff;
+    text-align: center;
+    background-color: #159957;
+    background-image: linear-gradient(120deg, #155799, #159957);
+    padding: 20px;
+}
+
+.btn {
+    padding: 0.6rem 0.9rem;
+    font-size: 1.1rem;
+    display: inline-block;
+    margin-bottom: 1rem;
+    color: rgba(255,255,255,1);
+    background-color: #159957;
+    background-image: linear-gradient(120deg, #155799, #159957);
+    border-color: #159957;
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 0.3rem;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn:hover {
+    color: rgba(255,255,255,0.7);
+}
+.btn:visited {
+    color: rgba(255,255,255,0.7);
+}
+.btn:focus {
+    color: rgba(255,255,255,0.7);
+}
+
 </style>
 
 ```{r render, eval = FALSE, include = FALSE}
@@ -40,6 +74,10 @@ rmarkdown::render(input = "psychmods.Rmd",
                   output_file = "docs/index.html")
 ```
 
+<br>
+<a href="https://github.com/Aaron0696/psychmods" class = "btn">View GitHub Repository</a>
+<a href="https://www.linkedin.com/in/aaron-lim-b30898135/" class = "btn">View LinkedIn</a>
+
 # TL:DR/Summary {.tabset}
 
 <div style="line-height: 2em;">
@@ -48,8 +86,13 @@ The characteristics of popular/unpopular modules were discussed and module biddi
 <div class = "green">
 This was a personal project by me, using data from [NUSMods](nusmods.com). Most of the heavy lifting in this project was extracting, wrangling, visualizing and understanding the data. I wrote this post to help consolidate my understanding of the data while at the same time provide some useful insights with various visualizations. This understanding was important to me as I intend to conduct further projects/analysis on the extracted data.
 
-The below sections are split into two large chunks. The `Codes` tab would display the codes that I used to extract and wrangle the data. The `Post` tab is a little write-up that attempts to find the most popular modules in NUS Psychology. The codes and documents that I used to generate this page can also be found in the [Github Repository](https://github.com/Aaron0696/psychmods). I can also be contacted through [LinkedIn](https://www.linkedin.com/in/aaron-lim-b30898135/) or my email at aronlimjm@gmail.com.
+The below sections are split into two large chunks. The `Codes` tab would display the codes that I used to extract and wrangle the data. The `Post` tab is a little write-up that attempts to find the most popular modules in NUS Psychology. 
 
+Credits to:
+
+* NUSMods, who scrapped and consolidated the data in an [API](https://nusmods.com/api/)
+*  *Jon Spring* in the stackoverflow [thread](https://stackoverflow.com/questions/53162821/animated-sorted-bar-chart-with-bars-overtaking-each-other) for providing the base code for the animated GIFS. 
+* Creators of the [Cayman](https://github.com/pages-themes/cayman) theme in Jekyll, where I adapted various aesthetics for the header and buttons.
 </div>
 </div>
 <br>
