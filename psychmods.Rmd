@@ -1,5 +1,5 @@
 ---
-title: "Popularity of Psychology Modules"
+title: "The Most And Least Popular NUS Psychology Modules"
 author: "Aaron0696"
 output:
   html_document:
