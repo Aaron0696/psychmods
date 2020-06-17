@@ -1,5 +1,5 @@
 ---
-title: "The Most And Least Popular NUS Psychology Modules"
+title: "The Most And Least Popular Psychology Modules In NUS"
 author: "Aaron0696"
 output:
   html_document:
@@ -999,7 +999,7 @@ animate(p, fps = 10, duration = 20, width = 800, height = 600, res = 96)
 anim_save("Honourgif.gif")
 ```
 
-<img src="Honourgif.gif" width="520" height="390" />
+<img src="Honourgif.gif" width="520" height="390" alt="GIF of the cumulative mean of the lowest successful bid of honour psychology modules in NUS." />
 
 `Introduction to Counselling Psychology` and `Correctional Psychology` consistently remained at the top of the graph. Even though they were sometimes overtaken by other modules that commanded high *LSB* for a semester or two such as `Positive Psychology`, the top spots were reclaimed after a few more semesters. They were not just popular in a certain semester but were consistently the most popular modules at any point in time, even after being offered many times in the past decade.
 <br>
@@ -1245,7 +1245,7 @@ animate(p, fps = 10, duration = 20, width = 800, height = 600, res = 96)
 anim_save("labgif.gif")
 ```
 
-<img src="labgif.gif" width="520" height="390" />
+<img src="labgif.gif" width="520" height="390" alt="GIF of the cumulative mean of the lowest successful bid of lab psychology modules in NUS." />
 
 Impressively, `Lab in Social Psychology` never lost its top spot since 2010 but its *LSB* has fallen since its absurdly high *LSB* of ~1600 in 2012/2013 Semester 1. There were even two semesters where the module was worth less than 100 bid points but it experienced a rise in recent years.
 
@@ -1479,7 +1479,7 @@ animate(p, fps = 10, duration = 20, width = 800, height = 600, res = 96)
 anim_save("elegif.gif")
 ```
 
-<img src="elegif.gif" width="520" height="390" />
+<img src="elegif.gif" width="520" height="390" alt="GIF of the cumulative mean of the lowest successful bid of elective psychology modules in NUS." />
 
 `Group Dynamics` makes quite an impression, as it commanded a *LSB* of ~800 in its first entrance of the decade. It quickly rose to the top but fell after a few semesters as other modules were offered and its LSB was lowered after a few semesters. Meanwhile, `Personality and Individual Differences` raced to the top in the last half of the decade with a steady and consistent climb. 
 
