@@ -20,8 +20,15 @@ p.caption {
   font-size: 0.8em;
 }
 
-div.tom { background-color:#e6ffff; border-radius: 5px; padding: 20px;}
-div.green { background-color:#b3ffe6; border-radius: 5px; padding: 20px;}
+div.tom { 
+  background-color:#e6ffff; 
+  border-radius: 5px; 
+  padding: 20px;}
+
+div.green { 
+  background-color:#b3ffe6; 
+  border-radius: 5px; 
+  padding: 20px;}
 
 div.fluid-row {
     color: #fff;
@@ -75,8 +82,10 @@ rmarkdown::render(input = "psychmods.Rmd",
 ```
 
 <br>
-<a href="https://github.com/Aaron0696/psychmods" class = "btn">View GitHub Repository</a>
-<a href="https://www.linkedin.com/in/aaron-lim-b30898135/" class = "btn">View LinkedIn</a>
+<a href="https://github.com/Aaron0696/about" class = "btn">About Me</a>
+<a href="https://github.com/Aaron0696/" class = "btn">My Projects</a>
+<a href="https://github.com/Aaron0696/psychmods" class = "btn">GitHub Repository</a>
+<a href="https://www.linkedin.com/in/aaron-lim-b30898135/" class = "btn">My LinkedIn</a>
 
 # TL:DR/Summary {.tabset}
 
@@ -1620,6 +1629,8 @@ There were 5 out of 8 modules belonging to Cognitive Psychology in this list, `L
 <div class = "tom">
 Once again, Cognitive Psychology dominated the list of unpopular modules, even after applying these strict conditions. At this point, he was quite sure that Cognitive Psychology modules were less popular. The observation that almost all of the Cognitive Psychology modules were unpopular across modules and module categories suggests that the reason for its unpopularity was not due to the lecturers or specific topics.
 </div>
+
+***
 
 ### Summary
 
