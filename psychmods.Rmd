@@ -82,8 +82,8 @@ rmarkdown::render(input = "psychmods.Rmd",
 ```
 
 <br>
-<a href="https://github.com/Aaron0696/about" class = "btn">About Me</a>
-<a href="https://github.com/Aaron0696/" class = "btn">My Projects</a>
+<a href="https://aaron0696.github.io/about" class = "btn">About Me</a>
+<a href="https://aaron0696.github.io/" class = "btn">My Projects</a>
 <a href="https://github.com/Aaron0696/psychmods" class = "btn">GitHub Repository</a>
 <a href="https://www.linkedin.com/in/aaron-lim-b30898135/" class = "btn">My LinkedIn</a>
 
